@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sqotify';
+const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/motify';
 
 const connectDB = () => {
   return mongoose.connect(mongoURI)

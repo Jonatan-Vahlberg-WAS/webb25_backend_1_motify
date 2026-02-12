@@ -1,7 +1,7 @@
 {
-  "name": "sqotify-backend",
+  "name": "motify-backend",
   "version": "1.0.0",
-  "description": "Sqotify Express backend",
+  "description": "Motify Express backend (Mongoose + Spotify)",
   "main": "index.js",
   "type": "module",
   "scripts": {

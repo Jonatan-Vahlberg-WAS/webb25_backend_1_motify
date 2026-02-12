@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Sqotify API is running' });
+  res.json({ message: 'Motify API is running' });
 });
 
 app.get('/api/artists', async (req, res) => {

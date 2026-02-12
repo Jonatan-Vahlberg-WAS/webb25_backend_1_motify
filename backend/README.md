@@ -1,6 +1,6 @@
-# Sqotify Backend
+# Motify Backend
 
-Express server with Mongoose, dotenv and CORS.
+Express server with Mongoose, dotenv and CORS. Motify = Mongoose + Spotify.
 
 ## Setup
 
@@ -17,7 +17,7 @@ Copy the example env file and adjust as needed:
 cp .env.example .env
 ```
 
-Set `MONGODB_URI` in `.env` (default: `mongodb://localhost:27017/sqotify`). Ensure MongoDB is running locally or use a cloud URI.
+Set `MONGODB_URI` in `.env` (default: `mongodb://localhost:27017/motify`). Ensure MongoDB is running locally or use a cloud URI.
 
 ## Start
 
