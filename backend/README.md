@@ -25,6 +25,12 @@ Set `MONGODB_URI` and `JWT_SECRET` in `.env`. Ensure MongoDB is running locally 
 npm start
 ```
 
+Seed the database (only if collections are empty):
+
+```bash
+npm run seed
+```
+
 For development with auto-reload:
 
 ```bash

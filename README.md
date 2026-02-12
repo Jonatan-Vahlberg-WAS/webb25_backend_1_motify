@@ -18,4 +18,4 @@ cp .env.example .env
 npm start
 ```
 
-See [backend/README.md](backend/README.md) for full setup and API details.
+Run `npm run seed` to populate with demo data (only when collections are empty). See [backend/README.md](backend/README.md) for full setup and API details.
