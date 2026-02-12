@@ -14,6 +14,39 @@ const ARTISTS = [
   'Don Toliver', 'Charli xcx', 'Jeff Buckley',
 ];
 
+// Last.fm images: name -> large URL (extralarge if available, else large)
+const ARTIST_IMAGES = {
+  'Bad Bunny': 'https://hips.hearstapps.com/hmg-prod/images/puerto-rican-singer-bad-bunny-attends-the-premiere-of-news-photo-1757619516.pjpeg?crop=0.668xw:1.00xh;0.114xw,0&resize=640:*',
+  'PinkPantheress': 'https://thegentlewoman.co.uk/img/L3FPMzFsL1V2dllkTDRIdUxCS25yZz09/tgw32-pinkpantheress-2000px-3.jpg',
+  'Taylor Swift': 'https://static.wikia.nocookie.net/taylor-swift/images/e/e8/TaylorSwiftApr09.jpg/revision/latest/scale-to-width-down/985?cb=20251201165849',
+  'Addison Rae': 'https://static.wikia.nocookie.net/addison-rae/images/1/10/Addison_Rae_%282024%29.jpg/revision/latest?cb=20241022011136',
+  'Djo': 'https://static.independent.co.uk/2025/10/08/17/16/DJO-ON-CANAL-The-Independent-exclusive-2025-photo-credit-Piers-Greenan.jpg?crop=1365,1365,x341.6,y0&width=1200&height=1200',
+  'Sabrina Carpenter': 'https://shop.umusic.com.au/cdn/shop/files/Sabrina_Carpenter_Square_a46d36cf-863a-4588-b69e-02bdabf73001.jpg?v=1750135260&width=900',
+  'Olivia Dean': 'https://shop.umusic.com.au/cdn/shop/files/Olivia_Dean_Square_66597cdf-dc9f-4f5b-882a-c84b0a98663c.jpg?v=1752550640&width=900',
+  'RAYE': 'https://static01.nyt.com/images/2023/02/03/multimedia/03raye-01-vkqm/03raye-01-vkqm-mediumSquareAt3X.jpg',
+  'Zara Larsson': 'https://hips.hearstapps.com/hmg-prod/images/main-image-high-res-credit-erik-henriksson-1614956600.jpg?crop=0.7666666666666667xw:1xh;center,top&resize=640:*',
+  'sombr': 'https://event-images.tixel.com/cdn-cgi/image/w=1600,f=webp,q=70/media/images/929b09362dff1e8c60c2ec7054e25148_1753084141_7119_square_l.jpg',
+  'The Marías': 'https://images.squarespace-cdn.com/content/v1/56c346b607eaa09d9189a870/1622754007972-S8UNCX86H1WJ612LJL8O/THE+MARIAS+FLAUNT+.jpeg',
+  'Chappell Roan': 'https://pyxis.nymag.com/v1/imgs/9e3/6aa/f40b2581614d3d81217e1e86045b6b07f0-chappell-roan.2x.rsquare.w330.jpg',
+  'Harry Styles': 'https://media.vogue.co.uk/photos/5eec89ea8d5f1419f361974f/1:1/w_4128,h_4128,c_limit/GettyImages-1203531045.jpg',
+  'Billie Eilish': 'https://m.media-amazon.com/images/I/61HGO-p3K8L._AC_UF1000,1000_QL80_.jpg',
+  'Tame Impala': 'https://static01.nyt.com/images/2020/03/10/arts/08popcast-print/08popcast-mediumSquareAt3X.jpg',
+  'Radiohead': 'https://dailycollegian.com/wp-content/uploads/2019/02/24068568_10154797654647245_943477172805599310_o-900x900.jpeg',
+  'EsDeeKid': 'https://cdn-images.dzcdn.net/images/artist/afad4388b6359c9d3fef0110d01efcd3/1900x1900-000000-80-0-0.jpg',
+  'She & Him': 'https://i1.sndcdn.com/avatars-000454351245-wl49n6-t1080x1080.jpg',
+  'Kendrick Lamar': 'https://static01.nyt.com/images/2024/11/26/multimedia/26amplifier-nl-tlpm/26amplifier-nl-tlpm-mediumSquareAt3X.jpg',
+  'Arctic Monkeys': 'https://www.nme.com/wp-content/uploads/2016/09/2013ArcticMonkeysPR281113-1.jpg',
+  'KATSEYE': 'https://www.the360mag.com/wp-content/uploads/2025/05/wp-17461754215467353007404961985188-1024x1024.jpg',
+  'Joji': 'https://www.the360mag.com/wp-content/uploads/2025/10/wp-17604157808127076971282070209531.jpg',
+  'Kanye West': 'https://static.dezeen.com/uploads/2016/08/kanye-west-ikea-collaboration-square_dezeen_936_0.jpg',
+  'bôa': 'https://event-images.tixel.com/cdn-cgi/image/w=1600,f=webp,q=70/media/images/642d7565f59a9fc0700ba8afec0dc177_1716131098_1824_square_l.jpg',
+  'TV Girl': 'https://scontent-cph2-1.cdninstagram.com/v/t51.75761-15/467512795_18471911254049296_3516460392965200224_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=108&ig_cache_key=MzUwNjQzNzMwMTIxODQzOTk0Nw%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6InhwaWRzLjE0NDB4MTQ0MC5zZHIuQzMifQ%3D%3D&_nc_ohc=TyYya81Dl7EQ7kNvwGeMct7&_nc_oc=Adl1KZ10T9kAJTlgoqisLZjsxAjbMAAtyx6HZ14Qsvhjzj6WfTw5Cprsia4QQAOJqfc&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent-cph2-1.cdninstagram.com&_nc_gid=2OF_B3O9uKf29Ha8mtBpJQ&oh=00_AftGLVbkepeFrJ3DkfU0pz4VhycvV07bkkOaxVHAoEBAFw&oe=6993A454',
+  'Tate McRae': 'https://ca-times.brightspotcdn.com/dims4/default/6e0fcee/2147483647/strip/true/crop/5464x8192+0+0/resize/1200x1799!/quality/75/?url=https%3A%2F%2Fcalifornia-times-brightspot.s3.amazonaws.com%2Fd4%2Fc3%2F432674d94fd29f1553081d08f51b%2F1378051-ca-tate-mcrae-304.jpg',
+  'Don Toliver': 'https://www.interviewmagazine.com/wp-content/uploads/2020/08/607A1684-1-scaled-e1596667219434.jpg',
+  'Charli xcx': 'https://pyxis.nymag.com/v1/imgs/170/0f1/0b532886a92f8dc7076bdd59ee63eb9884-charlie-xcx.1x.rsquare.w1400.jpg',
+  'Jeff Buckley': 'https://static01.nyt.com/images/2025/09/04/multimedia/30ST-BUCKLEY-01-wqfg/30ST-BUCKLEY-01-wqfg-mediumSquareAt3X.jpg',
+};
+
 const SONGS = [
   [1, 'DtMF', 237, 12124362, 1010468],
   [1, 'NUEVAYoL', 183, 9227326, 800583],
@@ -87,7 +120,9 @@ const runSeed = async () => {
 
   const artistIds = {};
   for (let i = 0; i < ARTISTS.length; i++) {
-    const artist = await Artist.create({ name: ARTISTS[i] });
+    const name = ARTISTS[i];
+    const image = ARTIST_IMAGES[name] ?? null;
+    const artist = await Artist.create({ name, ...(image && { image }) });
     artistIds[i + 1] = artist._id;
   }
   console.log(`Created ${ARTISTS.length} artists`);

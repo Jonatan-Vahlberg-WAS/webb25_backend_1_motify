@@ -6,6 +6,10 @@ const artistSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  image: {
+    type: String,
+    default: null,
+  },
 });
 
 export default mongoose.model('Artist', artistSchema);

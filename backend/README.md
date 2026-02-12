@@ -31,6 +31,13 @@ Seed the database (only if collections are empty):
 npm run seed
 ```
 
+Teardown (clear artists and songs) or reset (teardown + seed):
+
+```bash
+npm run teardown
+npm run seed:reset
+```
+
 For development with auto-reload:
 
 ```bash
