@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import Artist from './models/Artist.js';
-import Song from './models/Song.js';
+import artistsRouter from './routes/artists.js';
+import songsRouter from './routes/songs.js';
 
 const app = express();
 
@@ -12,22 +12,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'Motify API is running' });
 });
 
-app.get('/api/artists', async (req, res) => {
-  try {
-    const artists = await Artist.find();
-    res.json(artists);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/songs', async (req, res) => {
-  try {
-    const songs = await Song.find().populate('artist', 'name');
-    res.json(songs);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+app.use('/api/artists', artistsRouter);
+app.use('/api/songs', songsRouter);
 
 export default app;
