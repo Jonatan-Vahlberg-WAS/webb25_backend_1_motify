@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import artistsRouter from './routes/artists.js';
 import songsRouter from './routes/songs.js';
+import authRouter from './routes/auth.js';
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'Motify API is running' });
 });
 
+app.use('/auth', authRouter);
 app.use('/api/artists', artistsRouter);
 app.use('/api/songs', songsRouter);
 

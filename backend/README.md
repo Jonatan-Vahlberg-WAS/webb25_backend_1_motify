@@ -17,7 +17,7 @@ Copy the example env file and adjust as needed:
 cp .env.example .env
 ```
 
-Set `MONGODB_URI` in `.env` (default: `mongodb://localhost:27017/motify`). Ensure MongoDB is running locally or use a cloud URI.
+Set `MONGODB_URI` and `JWT_SECRET` in `.env`. Ensure MongoDB is running locally or use a cloud URI. Use a strong random string for `JWT_SECRET` in production.
 
 ## Start
 
@@ -35,5 +35,14 @@ Server runs at `http://localhost:3000` (or the `PORT` in your `.env`).
 
 ## API
 
+### Auth
+- `POST /auth/register` – Register (body: `{ email, password }`) → `{ accessToken, refreshToken, user }`
+- `POST /auth/login` – Login (body: `{ email, password }`) → `{ accessToken, refreshToken, user }`
+- `POST /auth/refresh` – Get new tokens (body: `{ refreshToken }`) → `{ accessToken, refreshToken }`
+- `GET /auth/me` – Current user (requires `Authorization: Bearer <accessToken>`)
+
+Access tokens expire in 15 min. Use the refresh endpoint with the refresh token to get new tokens. Protect routes with `requireAuth` from `middleware/auth.js`.
+
+### Artists & Songs
 - `GET /api/artists` – List all artists
 - `GET /api/songs` – List all songs (with artist populated)

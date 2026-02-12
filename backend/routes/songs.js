@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import Song from '../models/Song.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -24,7 +25,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     const song = await Song.create(req.body);
     await song.populate('artist', 'name');
@@ -34,7 +35,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAuth, async (req, res) => {
   try {
     const song = await Song.findByIdAndUpdate(
       req.params.id,
@@ -50,7 +51,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const song = await Song.findByIdAndDelete(req.params.id);
     if (!song) {

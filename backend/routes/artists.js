@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import Artist from '../models/Artist.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -24,7 +25,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     const artist = await Artist.create(req.body);
     res.status(201).json(artist);
@@ -33,7 +34,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAuth, async (req, res) => {
   try {
     const artist = await Artist.findByIdAndUpdate(
       req.params.id,
@@ -49,7 +50,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const artist = await Artist.findByIdAndDelete(req.params.id);
     if (!artist) {
