@@ -1,7 +1,10 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import Artist from '../models/Artist.js';
+import Album from '../models/Album.js';
 import Song from '../models/Song.js';
+import User from '../models/User.js';
+import Playlist from '../models/Playlist.js';
 
 const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/motify';
 
@@ -47,70 +50,121 @@ const ARTIST_IMAGES = {
   'Jeff Buckley': 'https://static01.nyt.com/images/2025/09/04/multimedia/30ST-BUCKLEY-01-wqfg/30ST-BUCKLEY-01-wqfg-mediumSquareAt3X.jpg',
 };
 
+// [artistId, title, releaseDate]
+const ALBUMS = [
+  [1, 'Un Verano Sin Ti', '2022-05-06'],
+  [1, 'Nadie Sabe Lo Que Va a Pasar Mañana', '2023-10-13'],
+  [2, 'Heaven knows', '2023-11-10'],
+  [3, 'The Tortured Poets Department', '2024-04-19'],
+  [4, 'AR', '2024-03-22'],
+  [5, 'DECIDE', '2022-09-16'],
+  [6, "Short n' Sweet", '2024-08-23'],
+  [7, 'Messy', '2023-06-30'],
+  [8, 'My 21st Century Blues', '2023-02-03'],
+  [9, 'Venus', '2024-02-09'],
+  [10, 'Soft Focus', '2024-05-17'],
+  [11, 'Cinema', '2021-06-25'],
+  [12, 'The Rise and Fall of a Midwest Princess', '2024-09-13'],
+  [13, "Harry's House", '2022-05-20'],
+  [14, 'HIT ME HARD AND SOFT', '2024-05-17'],
+  [15, 'Currents', '2015-07-17'],
+  [15, 'The Slow Rush', '2020-02-14'],
+  [16, 'Pablo Honey', '1993-02-22'],
+  [16, 'OK Computer', '1997-05-21'],
+  [17, 'Soundcheck', '2024-08-02'],
+  [18, 'Volume One', '2008-03-18'],
+  [19, 'The Glorious Dawn', '2025-02-14'],
+  [20, 'Favourite Worst Nightmare', '2007-04-23'],
+  [21, 'KATSEYE', '2025-01-24'],
+  [22, 'Nectar', '2020-09-25'],
+  [23, 'Graduation', '2007-09-11'],
+  [24, 'Twilight', '1998-01-28'],
+  [25, 'French Exit', '2014-09-23'],
+  [26, 'Think Later', '2023-12-08'],
+  [27, 'Hardstone Psycho', '2024-08-16'],
+  [28, 'Brat', '2024-06-14'],
+  [29, 'Grace', '1994-08-23'],
+];
+
+// [artistId, title, durationSeconds, playcount, listeners, albumId?]
 const SONGS = [
-  [1, 'DtMF', 237, 12124362, 1010468],
-  [1, 'NUEVAYoL', 183, 9227326, 800583],
-  [2, 'Stateside + Zara Larsson', 176, 7596071, 620552],
-  [1, 'BAILE INoLVIDABLE', 367, 9569942, 733372],
-  [3, 'Opalite', 235, 12250095, 673700],
-  [4, 'Fame Is a Gun', 183, 15940114, 885366],
-  [1, 'VOY A LLeVARTE PA PR', 204, 7550784, 622907],
-  [1, 'EoO', 204, 7376978, 608104],
-  [5, 'End of Beginning', 159, 31449067, 1898696],
-  [6, 'Manchild', 213, 20726530, 1129648],
-  [7, 'Man I Need', 184, 7004554, 723107],
-  [8, 'WHERE IS MY HUSBAND!', 196, 8102749, 815760],
-  [9, 'Midnight Sun', 189, 8275684, 527654],
-  [7, 'So Easy (To Fall In Love)', 170, 5879677, 699660],
-  [3, 'The Fate of Ophelia', 226, 21494557, 941110],
-  [10, 'back to friends', 199, 21499022, 1305590],
-  [11, 'No One Noticed', 236, 30429397, 1480035],
-  [12, 'Good Luck, Babe!', 218, 57136264, 2009749],
-  [13, 'Aperture', 311, 2653089, 437485],
-  [11, 'Sienna', 224, 17515037, 1083097],
-  [14, 'WILDFLOWER', 261, 33911896, 1562914],
-  [15, 'The Less I Know the Better', 217, 45761290, 2648161],
-  [9, 'Lush Life', 201, 11998517, 1347431],
-  [16, 'Creep', 235, 57490366, 3979194],
-  [6, 'Tears', 160, 13421859, 937121],
-  [17, '4 Raws', 147, 7034286, 599247],
-  [1, 'VeLDÁ', null, 5551848, 475280],
-  [14, 'BIRDS OF A FEATHER', 183, 53220164, 2144933],
-  [18, 'I Thought I Saw Your Face Today', 185, 5938693, 764807],
-  [19, 'luther (with SZA)', null, 26282958, 1469739],
-  [16, 'Let Down', 337, 37752378, 2418066],
-  [15, 'Dracula', 205, 7354561, 811315],
-  [1, 'WELTiTA', null, 4024931, 441160],
-  [20, '505', 305, 55379462, 2921008],
-  [21, 'Gabriela', 197, 15763004, 911589],
-  [22, 'PIXELATED KISSES', 110, 7954857, 449492],
-  [1, 'Tití Me Preguntó', 117, 10075951, 772697],
-  [1, 'PERFuMITO NUEVO', null, 3705610, 417252],
-  [23, 'Flashing Lights', 237, 35147129, 2122950],
-  [24, 'Duvet', 203, 38814782, 1892590],
-  [25, 'Lovers Rock', 213, 47949504, 2089268],
-  [6, 'Espresso', 175, 53224676, 2096809],
-  [26, 'Sports car', 165, 20215915, 871052],
-  [10, '12 to 12', 242, 7448683, 691746],
-  [22, 'LAST OF A DYING BREED', 149, 931892, 193148],
-  [1, 'KLOuFRENS', 290, 4312793, 404662],
-  [12, 'The Subway', 252, 15376946, 892822],
-  [27, 'E85', null, 799400, 173333],
-  [28, 'Von dutch', 164, 30059883, 1381578],
-  [29, "Lover, You Should've Come Over", 403, 28912474, 1540300],
-  [3, 'Anti-Hero (Acoustic)', 185, 8923412, 521000],
-  [14, 'What Was I Made For?', 220, 28472918, 1523000],
-  [20, 'Do I Wanna Know?', 272, 41258391, 2281900],
-  [19, 'HUMBLE.', 177, 38927456, 2156000],
+  [1, 'DtMF', 237, 12124362, 1010468, 2],
+  [1, 'NUEVAYoL', 183, 9227326, 800583, 2],
+  [2, 'Stateside + Zara Larsson', 176, 7596071, 620552, 3],
+  [1, 'BAILE INoLVIDABLE', 367, 9569942, 733372, 2],
+  [3, 'Opalite', 235, 12250095, 673700, 4],
+  [4, 'Fame Is a Gun', 183, 15940114, 885366, 5],
+  [1, 'VOY A LLeVARTE PA PR', 204, 7550784, 622907, 2],
+  [1, 'EoO', 204, 7376978, 608104, 2],
+  [5, 'End of Beginning', 159, 31449067, 1898696, 6],
+  [6, 'Manchild', 213, 20726530, 1129648, 7],
+  [7, 'Man I Need', 184, 7004554, 723107, 8],
+  [8, 'WHERE IS MY HUSBAND!', 196, 8102749, 815760, 9],
+  [9, 'Midnight Sun', 189, 8275684, 527654, 10],
+  [7, 'So Easy (To Fall In Love)', 170, 5879677, 699660, 8],
+  [3, 'The Fate of Ophelia', 226, 21494557, 941110, 4],
+  [10, 'back to friends', 199, 21499022, 1305590, 11],
+  [11, 'No One Noticed', 236, 30429397, 1480035, 12],
+  [12, 'Good Luck, Babe!', 218, 57136264, 2009749, 13],
+  [13, 'Aperture', 311, 2653089, 437485, 14],
+  [11, 'Sienna', 224, 17515037, 1083097, 12],
+  [14, 'WILDFLOWER', 261, 33911896, 1562914, 15],
+  [15, 'The Less I Know the Better', 217, 45761290, 2648161, 16],
+  [9, 'Lush Life', 201, 11998517, 1347431, 10],
+  [16, 'Creep', 235, 57490366, 3979194, 18],
+  [6, 'Tears', 160, 13421859, 937121, 7],
+  [17, '4 Raws', 147, 7034286, 599247, 20],
+  [1, 'VeLDÁ', null, 5551848, 475280, 2],
+  [14, 'BIRDS OF A FEATHER', 183, 53220164, 2144933, 15],
+  [18, 'I Thought I Saw Your Face Today', 185, 5938693, 764807, 21],
+  [19, 'luther (with SZA)', null, 26282958, 1469739, 22],
+  [16, 'Let Down', 337, 37752378, 2418066, 19],
+  [15, 'Dracula', 205, 7354561, 811315, 17],
+  [1, 'WELTiTA', null, 4024931, 441160, 2],
+  [20, '505', 305, 55379462, 2921008, 23],
+  [21, 'Gabriela', 197, 15763004, 911589, 24],
+  [22, 'PIXELATED KISSES', 110, 7954857, 449492, 25],
+  [1, 'Tití Me Preguntó', 117, 10075951, 772697, 1],
+  [1, 'PERFuMITO NUEVO', null, 3705610, 417252, 2],
+  [23, 'Flashing Lights', 237, 35147129, 2122950, 26],
+  [24, 'Duvet', 203, 38814782, 1892590, 27],
+  [25, 'Lovers Rock', 213, 47949504, 2089268, 28],
+  [6, 'Espresso', 175, 53224676, 2096809, 7],
+  [26, 'Sports car', 165, 20215915, 871052, 29],
+  [10, '12 to 12', 242, 7448683, 691746, 11],
+  [22, 'LAST OF A DYING BREED', 149, 931892, 193148, 25],
+  [1, 'KLOuFRENS', 290, 4312793, 404662, 2],
+  [12, 'The Subway', 252, 15376946, 892822, 13],
+  [27, 'E85', null, 799400, 173333, 30],
+  [28, 'Von dutch', 164, 30059883, 1381578, 31],
+  [29, "Lover, You Should've Come Over", 403, 28912474, 1540300, 32],
+  [3, 'Anti-Hero (Acoustic)', 185, 8923412, 521000, null],
+  [14, 'What Was I Made For?', 220, 28472918, 1523000, null],
+  [20, 'Do I Wanna Know?', 272, 41258391, 2281900, null],
+  [19, 'HUMBLE.', 177, 38927456, 2156000, null],
+];
+
+// From sql_unused/FURTHER_SEED_DATA.sql
+// [name, description, song_ids (1-based, matching SQL), hasOwner?]
+const PLAYLISTS = [
+  ['Reggaeton & Perreo', 'Latin trap and reggaeton for the club', [1, 2, 4, 37, 7, 8]],
+  ['Indie Dream Pop', 'Dreamy indie and bedroom pop', [17, 20, 16, 44, 41, 40, 3]],
+  ['Sad Girl Autumn', 'Breakup anthems and heartbreak ballads', [21, 28, 18, 47, 50, 11, 14, 29]],
+  ['90s Alt Essentials', 'Alternative and art rock from the 90s', [24, 31, 40, 50]],
+  ['Pop Bangers 2024', 'The biggest pop hits of the year', [18, 42, 25, 10, 5, 15, 49, 23, 43]],
+  ['Late Night Drive', 'Moody synths and introspective vibes', [22, 32, 36, 34, 53, 9, 48, 39]],
+  ['Coffee Shop Indie', 'Chill acoustic and indie folk', [29, 11, 14, 17, 16, 50]],
+  ['Viral TikTok Hits', 'Songs that broke the internet', [42, 18, 9, 17, 16, 41, 28, 24, 40], true],
 ];
 
 const runSeed = async () => {
   await mongoose.connect(mongoURI);
 
   const artistCount = await Artist.countDocuments();
+  const albumCount = await Album.countDocuments();
   const songCount = await Song.countDocuments();
 
-  if (artistCount > 0 || songCount > 0) {
+  if (artistCount > 0 || albumCount > 0 || songCount > 0) {
     console.log('Collections not empty. Skipping seed.');
     await mongoose.disconnect();
     process.exit(0);
@@ -127,16 +181,47 @@ const runSeed = async () => {
   }
   console.log(`Created ${ARTISTS.length} artists`);
 
-  for (const [artistId, title, durationSeconds, playcount, listeners] of SONGS) {
-    await Song.create({
+  const albumIds = {};
+  for (let i = 0; i < ALBUMS.length; i++) {
+    const [artistId, title, releaseDate] = ALBUMS[i];
+    const album = await Album.create({
+      artist: artistIds[artistId],
+      title,
+      releaseDate: new Date(releaseDate),
+    });
+    albumIds[i + 1] = album._id;
+  }
+  console.log(`Created ${ALBUMS.length} albums`);
+
+  const songIds = [];
+  for (const [artistId, title, durationSeconds, playcount, listeners, albumId] of SONGS) {
+    const song = await Song.create({
       artist: artistIds[artistId],
       title,
       durationSeconds: durationSeconds ?? null,
       playcount,
       listeners,
+      ...(albumId && { album: albumIds[albumId] }),
     });
+    songIds.push(song._id);
   }
   console.log(`Created ${SONGS.length} songs`);
+
+  let seedUser = await User.findOne({ email: 'testuser@motify.test' });
+  if (!seedUser) {
+    seedUser = await User.create({ email: 'testuser@motify.test', password: 'password123' });
+    console.log('Created test user (testuser@motify.test / password123)');
+  }
+
+  for (const pl of PLAYLISTS) {
+    const [name, description, songIdsSql, hasOwner] = pl;
+    const songs = songIdsSql
+      .map((sqlId) => songIds[sqlId - 1])
+      .filter(Boolean);
+    const user = hasOwner ? seedUser._id : null;
+    await Playlist.create({ name, description, songs, user });
+  }
+  console.log(`Created ${PLAYLISTS.length} playlists`);
 
   await mongoose.disconnect();
   console.log('Seed complete.');
