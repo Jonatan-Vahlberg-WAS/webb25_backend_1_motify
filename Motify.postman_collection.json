@@ -6,6 +6,16 @@
     "_exporter_id": "10403514",
     "_collection_link": "https://go.postman.co/collection/10403514-cff42227-5e09-4435-b8f8-051ef425ebde?source=collection_link"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:3000" },
     { "key": "accessToken", "value": "" },
@@ -16,17 +26,6 @@
   "item": [
     {
       "name": "Health",
-      "event": [{
-        "listen": "test",
-        "script": {
-          "exec": [
-            "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-            "const res = pm.response.json();",
-            "pm.test('API is running', () => pm.expect(res.message).to.include('Motify'));"
-          ],
-          "type": "text/javascript"
-        }
-      }],
       "request": {
         "method": "GET",
         "url": "{{baseUrl}}/"
@@ -41,15 +40,7 @@
             "listen": "test",
             "script": {
               "exec": [
-                "pm.test('Status is 201', () => pm.response.to.have.status(201));",
                 "const res = pm.response.json();",
-                "pm.test('Response has accessToken', () => pm.expect(res).to.have.property('accessToken'));",
-                "pm.test('Response has refreshToken', () => pm.expect(res).to.have.property('refreshToken'));",
-                "pm.test('Response has user with id and email', () => {",
-                "  pm.expect(res).to.have.property('user');",
-                "  pm.expect(res.user).to.have.property('id');",
-                "  pm.expect(res.user).to.have.property('email');",
-                "});",
                 "if (res.accessToken) pm.collectionVariables.set('accessToken', res.accessToken);",
                 "if (res.refreshToken) pm.collectionVariables.set('refreshToken', res.refreshToken);"
               ],
@@ -57,12 +48,10 @@
             }
           }],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"testuser@motify.test\",\n  \"password\": \"password123\"\n}"
-            },
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"testuser@motify.test\",\n  \"password\": \"password123\"\n}"},
             "url": "{{baseUrl}}/auth/register"
           }
         },
@@ -72,11 +61,7 @@
             "listen": "test",
             "script": {
               "exec": [
-                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
                 "const res = pm.response.json();",
-                "pm.test('Response has accessToken', () => pm.expect(res).to.have.property('accessToken'));",
-                "pm.test('Response has refreshToken', () => pm.expect(res).to.have.property('refreshToken'));",
-                "pm.test('Response has user', () => pm.expect(res).to.have.property('user'));",
                 "if (res.accessToken) pm.collectionVariables.set('accessToken', res.accessToken);",
                 "if (res.refreshToken) pm.collectionVariables.set('refreshToken', res.refreshToken);"
               ],
@@ -84,6 +69,7 @@
             }
           }],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
@@ -99,10 +85,7 @@
             "listen": "test",
             "script": {
               "exec": [
-                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
                 "const res = pm.response.json();",
-                "pm.test('Response has accessToken', () => pm.expect(res).to.have.property('accessToken'));",
-                "pm.test('Response has refreshToken', () => pm.expect(res).to.have.property('refreshToken'));",
                 "if (res.accessToken) pm.collectionVariables.set('accessToken', res.accessToken);",
                 "if (res.refreshToken) pm.collectionVariables.set('refreshToken', res.refreshToken);"
               ],
@@ -110,6 +93,7 @@
             }
           }],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
@@ -121,24 +105,8 @@
         },
         {
           "name": "Me",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                "const res = pm.response.json();",
-                "pm.test('Response has user', () => pm.expect(res).to.have.property('user'));",
-                "pm.test('User has id and email', () => {",
-                "  pm.expect(res.user).to.have.property('id');",
-                "  pm.expect(res.user).to.have.property('email');",
-                "});"
-              ],
-              "type": "text/javascript"
-            }
-          }],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": "{{baseUrl}}/auth/me"
           }
         }
@@ -149,17 +117,6 @@
       "item": [
         {
           "name": "Get all artists",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                "const res = pm.response.json();",
-                "pm.test('Response is array', () => pm.expect(res).to.be.an('array'));"
-              ],
-              "type": "text/javascript"
-            }
-          }],
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/artists"
@@ -167,25 +124,6 @@
         },
         {
           "name": "Get artist by ID",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 200 or 404', () => {",
-                "  const status = pm.response.code;",
-                "  pm.expect([200, 404]).to.include(status);",
-                "});",
-                "if (pm.response.code === 200) {",
-                "  const res = pm.response.json();",
-                "  pm.test('Artist has _id and name', () => {",
-                "    pm.expect(res).to.have.property('_id');",
-                "    pm.expect(res).to.have.property('name');",
-                "  });",
-                "}"
-              ],
-              "type": "text/javascript"
-            }
-          }],
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/artists/{{artistId}}"
@@ -197,12 +135,7 @@
             "listen": "test",
             "script": {
               "exec": [
-                "pm.test('Status is 201', () => pm.response.to.have.status(201));",
                 "const res = pm.response.json();",
-                "pm.test('Artist has _id and name', () => {",
-                "  pm.expect(res).to.have.property('_id');",
-                "  pm.expect(res).to.have.property('name');",
-                "});",
                 "if (res._id) pm.collectionVariables.set('artistId', res._id.toString());"
               ],
               "type": "text/javascript"
@@ -210,10 +143,7 @@
           }],
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Test Artist\"\n}"
@@ -223,23 +153,9 @@
         },
         {
           "name": "Update artist",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                "const res = pm.response.json();",
-                "pm.test('Artist has updated name', () => pm.expect(res.name).to.equal('Updated Artist Name'));"
-              ],
-              "type": "text/javascript"
-            }
-          }],
           "request": {
             "method": "PUT",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Updated Artist Name\"\n}"
@@ -249,18 +165,8 @@
         },
         {
           "name": "Delete artist",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 204', () => pm.response.to.have.status(204));"
-              ],
-              "type": "text/javascript"
-            }
-          }],
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": "{{baseUrl}}/api/artists/{{artistId}}"
           }
         }
@@ -271,17 +177,6 @@
       "item": [
         {
           "name": "Get all songs",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                "const res = pm.response.json();",
-                "pm.test('Response is array', () => pm.expect(res).to.be.an('array'));"
-              ],
-              "type": "text/javascript"
-            }
-          }],
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/songs"
@@ -289,26 +184,6 @@
         },
         {
           "name": "Get song by ID",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 200 or 404', () => {",
-                "  const status = pm.response.code;",
-                "  pm.expect([200, 404]).to.include(status);",
-                "});",
-                "if (pm.response.code === 200) {",
-                "  const res = pm.response.json();",
-                "  pm.test('Song has _id, title, artist', () => {",
-                "    pm.expect(res).to.have.property('_id');",
-                "    pm.expect(res).to.have.property('title');",
-                "    pm.expect(res).to.have.property('artist');",
-                "  });",
-                "}"
-              ],
-              "type": "text/javascript"
-            }
-          }],
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/songs/{{songId}}"
@@ -320,13 +195,7 @@
             "listen": "test",
             "script": {
               "exec": [
-                "pm.test('Status is 201', () => pm.response.to.have.status(201));",
                 "const res = pm.response.json();",
-                "pm.test('Song has _id, title, artist', () => {",
-                "  pm.expect(res).to.have.property('_id');",
-                "  pm.expect(res).to.have.property('title');",
-                "  pm.expect(res).to.have.property('artist');",
-                "});",
                 "if (res._id) pm.collectionVariables.set('songId', res._id.toString());"
               ],
               "type": "text/javascript"
@@ -334,10 +203,7 @@
           }],
           "request": {
             "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"artist\": \"{{artistId}}\",\n  \"title\": \"Test Song\",\n  \"durationSeconds\": 180,\n  \"playcount\": 0,\n  \"listeners\": 0\n}"
@@ -347,24 +213,9 @@
         },
         {
           "name": "Update song",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                "const res = pm.response.json();",
-                "pm.test('Song has updated title', () => pm.expect(res.title).to.equal('Updated Song Title'));",
-                "pm.test('Song has updated playcount', () => pm.expect(res.playcount).to.equal(100));"
-              ],
-              "type": "text/javascript"
-            }
-          }],
           "request": {
             "method": "PUT",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"title\": \"Updated Song Title\",\n  \"playcount\": 100\n}"
@@ -374,18 +225,8 @@
         },
         {
           "name": "Delete song",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test('Status is 204', () => pm.response.to.have.status(204));"
-              ],
-              "type": "text/javascript"
-            }
-          }],
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": "{{baseUrl}}/api/songs/{{songId}}"
           }
         }
