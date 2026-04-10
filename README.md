@@ -1,5 +1,9 @@
 # Motify
 
+**Implementation task (playlist sharing):** [docs/SHARE_SYSTEM.md](docs/SHARE_SYSTEM.md)
+
+---
+
 Motify = Mongoose + Spotify. A music API backend built with Express and MongoDB.
 
 ## Project structure
@@ -18,4 +22,4 @@ cp .env.example .env
 npm start
 ```
 
-Run `npm run seed` to populate with demo data (only when collections are empty). See [backend/README.md](backend/README.md) for full setup and API details.
+Run `npm run seed` to populate with demo data (only when collections are empty). See [backend/README.md](backend/README.md) for setup, the full API list, auth request flow (`optionalAuth` / `requireAuth`), and notes on Express route ordering.

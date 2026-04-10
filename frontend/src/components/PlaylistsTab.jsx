@@ -9,11 +9,18 @@ function formatDuration(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
+const SHARED_PLAYLISTS_URL = '/api/playlists/shared-with-me'
+
 export default function PlaylistsTab() {
   const { user, getAccessToken } = useAuth()
   const [playlists, setPlaylists] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [sharedPlaylists, setSharedPlaylists] = useState([])
+  const [sharedState, setSharedState] = useState('loading')
+  const [publicPlaylists, setPublicPlaylists] = useState([])
+  const [publicLoading, setPublicLoading] = useState(true)
+  const [publicError, setPublicError] = useState(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [name, setName] = useState('')
@@ -26,11 +33,20 @@ export default function PlaylistsTab() {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
-  const [expandedId, setExpandedId] = useState(null)
+  const [expandedKey, setExpandedKey] = useState(null)
 
-  const toggleExpand = (id) => {
-    setExpandedId((prev) => (prev === id ? null : id))
+  const toggleExpand = (prefix, id) => {
+    const key = `${prefix}:${id}`
+    setExpandedKey((prev) => (prev === key ? null : key))
   }
+
+  const authJsonHeaders = useCallback(() => {
+    const token = getAccessToken()
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    }
+  }, [getAccessToken])
 
   const fetchPlaylists = useCallback(async () => {
     if (!user?.id) return
@@ -38,11 +54,11 @@ export default function PlaylistsTab() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/playlists?user=${user.id}`, {
+      const res = await fetch('/api/playlists/my', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
-      if (!res.ok) throw new Error('Failed to load playlists')
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to load playlists')
       setPlaylists(data)
     } catch (err) {
       setError(err.message)
@@ -50,6 +66,59 @@ export default function PlaylistsTab() {
       setLoading(false)
     }
   }, [user?.id, getAccessToken])
+
+  useEffect(() => {
+    if (!user?.id) return
+    const token = getAccessToken()
+    let cancelled = false
+    setSharedState('loading')
+    fetch(SHARED_PLAYLISTS_URL, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(async (res) => {
+        if (cancelled) return
+        if (!res.ok) {
+          setSharedState('unavailable')
+          setSharedPlaylists([])
+          return
+        }
+        try {
+          const data = await res.json()
+          if (cancelled) return
+          setSharedPlaylists(Array.isArray(data) ? data : [])
+          setSharedState('ok')
+        } catch {
+          if (!cancelled) {
+            setSharedState('unavailable')
+            setSharedPlaylists([])
+          }
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSharedState('unavailable')
+          setSharedPlaylists([])
+        }
+      })
+    return () => { cancelled = true }
+  }, [user?.id, getAccessToken])
+
+  useEffect(() => {
+    setPublicLoading(true)
+    setPublicError(null)
+    fetch('/api/playlists')
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          setPublicError(data.error || 'Failed to load public playlists')
+          setPublicPlaylists([])
+          return
+        }
+        setPublicPlaylists(Array.isArray(data) ? data : [])
+      })
+      .catch((err) => setPublicError(err.message))
+      .finally(() => setPublicLoading(false))
+  }, [])
 
   useEffect(() => {
     fetchPlaylists()
@@ -119,7 +188,6 @@ export default function PlaylistsTab() {
     e.preventDefault()
     setFormError('')
     setSubmitting(true)
-    const token = getAccessToken()
     try {
       const body = {
         name: name.trim(),
@@ -127,12 +195,9 @@ export default function PlaylistsTab() {
         songs: selectedSongs.map((s) => s._id),
       }
       if (editing) {
-        const res = await fetch(`/api/playlists/${editing._id}`, {
+        const res = await fetch(`/api/playlists/my/${editing._id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: authJsonHeaders(),
           body: JSON.stringify(body),
         })
         if (!res.ok) {
@@ -140,12 +205,9 @@ export default function PlaylistsTab() {
           throw new Error(data.error || 'Update failed')
         }
       } else {
-        const res = await fetch('/api/playlists', {
+        const res = await fetch('/api/playlists/my', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers: authJsonHeaders(),
           body: JSON.stringify(body),
         })
         if (!res.ok) {
@@ -163,12 +225,11 @@ export default function PlaylistsTab() {
   }
 
   const handleDelete = async (p) => {
-    const token = getAccessToken()
     setSubmitting(true)
     try {
-      const res = await fetch(`/api/playlists/${p._id}`, {
+      const res = await fetch(`/api/playlists/my/${p._id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: authJsonHeaders(),
       })
       if (!res.ok) throw new Error('Delete failed')
       setDeleteConfirm(null)
@@ -207,7 +268,7 @@ export default function PlaylistsTab() {
       {!loading && !error && playlists.length > 0 && (
         <div className="playlists-list">
           {playlists.map((p) => {
-            const isExpanded = expandedId === p._id
+            const isExpanded = expandedKey === `my:${p._id}`
             const songs = p.songs ?? []
             return (
               <div key={p._id} className={`playlist-row ${isExpanded ? 'playlist-row-expanded' : ''}`}>
@@ -215,7 +276,7 @@ export default function PlaylistsTab() {
                   <button
                     type="button"
                     className="playlist-row-expand"
-                    onClick={() => toggleExpand(p._id)}
+                    onClick={() => toggleExpand('my', p._id)}
                     aria-expanded={isExpanded}
                     aria-label={isExpanded ? 'Collapse playlist' : 'Expand playlist'}
                   >
@@ -224,7 +285,7 @@ export default function PlaylistsTab() {
                   <button
                     type="button"
                     className="playlist-row-content playlist-row-content-btn"
-                    onClick={() => toggleExpand(p._id)}
+                    onClick={() => toggleExpand('my', p._id)}
                   >
                     <h3 className="playlist-row-title">{p.name}</h3>
                     <p className="playlist-row-meta">
@@ -295,6 +356,142 @@ export default function PlaylistsTab() {
           })}
         </div>
       )}
+
+      <section className="playlists-subsection" aria-labelledby="shared-playlists-heading">
+        <h2 id="shared-playlists-heading" className="section-title playlists-subsection-title">
+          Shared playlists
+        </h2>
+        <p className="section-subtitle">Playlists others share with you</p>
+        {sharedState === 'loading' && <p className="playlists-loading">Loading...</p>}
+        {sharedState === 'unavailable' && (
+          <div className="playlists-unavailable">
+            <p>Shared playlists unavailable.</p>
+          </div>
+        )}
+        {sharedState === 'ok' && sharedPlaylists.length === 0 && (
+          <div className="playlists-empty playlists-empty-compact">
+            <p>No shared playlists yet.</p>
+          </div>
+        )}
+        {sharedState === 'ok' && sharedPlaylists.length > 0 && (
+          <div className="playlists-list">
+            {sharedPlaylists.map((p) => {
+              const isExpanded = expandedKey === `shared:${p._id}`
+              const songs = p.songs ?? []
+              return (
+                <div key={p._id} className={`playlist-row playlist-row-readonly ${isExpanded ? 'playlist-row-expanded' : ''}`}>
+                  <div className="playlist-row-header">
+                    <button
+                      type="button"
+                      className="playlist-row-expand"
+                      onClick={() => toggleExpand('shared', p._id)}
+                      aria-expanded={isExpanded}
+                      aria-label={isExpanded ? 'Collapse playlist' : 'Expand playlist'}
+                    >
+                      <span className={`playlist-row-chevron ${isExpanded ? 'playlist-row-chevron-open' : ''}`}>›</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="playlist-row-content playlist-row-content-btn"
+                      onClick={() => toggleExpand('shared', p._id)}
+                    >
+                      <h3 className="playlist-row-title">{p.name}</h3>
+                      <p className="playlist-row-meta">
+                        {songs.length} {songs.length === 1 ? 'song' : 'songs'}
+                        {p.description && ` · ${p.description}`}
+                      </p>
+                    </button>
+                  </div>
+                  {isExpanded && (
+                    <div className="playlist-row-songs">
+                      {songs.length === 0 ? (
+                        <p className="playlist-row-songs-empty">No songs in this playlist</p>
+                      ) : (
+                        <ul className="playlist-expanded-list">
+                          {songs.map((s, i) => (
+                            <li key={s._id} className="playlist-expanded-item">
+                              <span className="playlist-expanded-rank">{i + 1}</span>
+                              <span className="playlist-expanded-title">{s.title}</span>
+                              <span className="playlist-expanded-artist">{s.artist?.name ?? '—'}</span>
+                              <span className="playlist-expanded-duration">{formatDuration(s.durationSeconds)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="playlists-subsection" aria-labelledby="public-playlists-heading">
+        <h2 id="public-playlists-heading" className="section-title playlists-subsection-title">
+          Public playlists
+        </h2>
+        <p className="section-subtitle">Community playlists (no account required)</p>
+        {publicLoading && <p className="playlists-loading">Loading...</p>}
+        {publicError && <p className="playlists-error">{publicError}</p>}
+        {!publicLoading && !publicError && publicPlaylists.length === 0 && (
+          <div className="playlists-empty playlists-empty-compact">
+            <p>No public playlists right now.</p>
+          </div>
+        )}
+        {!publicLoading && !publicError && publicPlaylists.length > 0 && (
+          <div className="playlists-list">
+            {publicPlaylists.map((p) => {
+              const isExpanded = expandedKey === `public:${p._id}`
+              const songs = p.songs ?? []
+              return (
+                <div key={p._id} className={`playlist-row playlist-row-readonly ${isExpanded ? 'playlist-row-expanded' : ''}`}>
+                  <div className="playlist-row-header">
+                    <button
+                      type="button"
+                      className="playlist-row-expand"
+                      onClick={() => toggleExpand('public', p._id)}
+                      aria-expanded={isExpanded}
+                      aria-label={isExpanded ? 'Collapse playlist' : 'Expand playlist'}
+                    >
+                      <span className={`playlist-row-chevron ${isExpanded ? 'playlist-row-chevron-open' : ''}`}>›</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="playlist-row-content playlist-row-content-btn"
+                      onClick={() => toggleExpand('public', p._id)}
+                    >
+                      <h3 className="playlist-row-title">{p.name}</h3>
+                      <p className="playlist-row-meta">
+                        {songs.length} {songs.length === 1 ? 'song' : 'songs'}
+                        {p.description && ` · ${p.description}`}
+                      </p>
+                    </button>
+                  </div>
+                  {isExpanded && (
+                    <div className="playlist-row-songs">
+                      {songs.length === 0 ? (
+                        <p className="playlist-row-songs-empty">No songs in this playlist</p>
+                      ) : (
+                        <ul className="playlist-expanded-list">
+                          {songs.map((s, i) => (
+                            <li key={s._id} className="playlist-expanded-item">
+                              <span className="playlist-expanded-rank">{i + 1}</span>
+                              <span className="playlist-expanded-title">{s.title}</span>
+                              <span className="playlist-expanded-artist">{s.artist?.name ?? '—'}</span>
+                              <span className="playlist-expanded-duration">{formatDuration(s.durationSeconds)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
 
       {formOpen && (
         <div className="playlist-form-overlay" onClick={closeForm} role="presentation">

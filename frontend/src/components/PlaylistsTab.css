@@ -3,6 +3,35 @@
   margin: 0 auto;
 }
 
+.playlists-subsection {
+  margin-top: 3rem;
+}
+
+.playlists-subsection-title {
+  margin-bottom: 0.25rem;
+}
+
+.playlists-unavailable {
+  padding: 1.25rem 1.5rem;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+}
+
+.playlists-unavailable p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.playlists-empty-compact {
+  padding: 2rem 1.5rem;
+}
+
+.playlist-row-readonly .playlist-row-header {
+  padding-right: 1.25rem;
+}
+
 .playlists-tab-header {
   display: flex;
   justify-content: space-between;
@@ -76,7 +105,9 @@
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   border-radius: 6px;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .playlist-row-expand:hover {

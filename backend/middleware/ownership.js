@@ -13,3 +13,12 @@ export const isPlaylistOwner = async (req, res, next) => {
   req.playlist = playlist;
   next();
 };
+
+/**
+ * Placeholder for extension work (playlist sharing). Not wired to any route yet.
+ * Implement authorization for “shared with me” access when you add those routes;
+ * until then, leaving this empty is intentional—see docs/SHARE_SYSTEM.md.
+ */
+export const isPlaylistSharedWithUser = async (req, res, next) => {
+  // TODO: Implement this (student / course extension)
+};

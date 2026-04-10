@@ -7,11 +7,10 @@ const router = Router();
 
 router.get('/latest', async (req, res) => {
   try {
-    const playlists = await Playlist.find()
+    const playlists = await Playlist.find({ user: null })
       .sort({ _id: -1 })
       .limit(5)
-      .populate('songs', 'title')
-      .populate('user', 'email');
+      .populate('songs', 'title');
     res.json(playlists);
   } catch (err) {
     console.error('Latest playlists failed:', err.message);
@@ -19,12 +18,30 @@ router.get('/latest', async (req, res) => {
   }
 });
 
+/**
+ * Current user’s playlists (requires Bearer token; optionalAuth + requireAuth).
+ * Registered before GET /:id so "my" is not captured as an :id.
+ */
+router.get('/my', requireAuth, async (req, res) => {
+  try {
+    const playlists = await Playlist.find({ user: req.user._id })
+      .populate('songs', 'title artist durationSeconds')
+      .populate('user', 'email');
+    res.json(playlists);
+  } catch (err) {
+    console.error('My playlists failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Get all playlists that are publicly accessible
+ */
 router.get('/', async (req, res) => {
   try {
-    const filter = {};
-    if (req.query.user) filter.user = req.query.user;
-
-    const playlists = await Playlist.find(filter)
+    const playlists = await Playlist.find({
+      user: null,
+    })
       .populate('songs', 'title artist durationSeconds')
       .populate('user', 'email');
     res.json(playlists);
@@ -34,23 +51,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
-  try {
-    const playlist = await Playlist.findById(req.params.id)
-      .populate({ path: 'songs', populate: { path: 'artist', select: 'name' } })
-      .populate('user', 'email');
-    if (!playlist) {
-      console.error('Playlist by ID: Playlist not found');
-      return res.status(404).json({ error: 'Playlist not found' });
-    }
-    res.json(playlist);
-  } catch (err) {
-    console.error('Playlist by ID failed:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.post('/', requireAuth, async (req, res) => {
+router.post('/my', requireAuth, async (req, res) => {
   try {
     const body = {
       name: req.body.name,
@@ -68,12 +69,12 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-router.put('/:id', requireAuth, isPlaylistOwner, async (req, res) => {
+router.put('/my/:id', requireAuth, isPlaylistOwner, async (req, res) => {
   try {
     const playlist = await Playlist.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     )
       .populate('songs', 'title artist durationSeconds')
       .populate('user', 'email');
@@ -88,7 +89,7 @@ router.put('/:id', requireAuth, isPlaylistOwner, async (req, res) => {
   }
 });
 
-router.delete('/:id', requireAuth, isPlaylistOwner, async (req, res) => {
+router.delete('/my/:id', requireAuth, isPlaylistOwner, async (req, res) => {
   try {
     const playlist = await Playlist.findByIdAndDelete(req.params.id);
     if (!playlist) {
@@ -101,5 +102,31 @@ router.delete('/:id', requireAuth, isPlaylistOwner, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+/**
+ * Get a publicly accessible playlist by ID (user must be null on the document).
+ * Must be registered after /my so /my is not interpreted as an id.
+ */
+router.get('/:id', async (req, res) => {
+  try {
+    const playlist = await Playlist.findOne({
+      _id: req.params.id,
+      user: null,
+    })
+      .populate({ path: 'songs', populate: { path: 'artist', select: 'name' } });
+    if (!playlist) {
+      console.error('Playlist by ID: Playlist not found');
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+    res.json(playlist);
+  } catch (err) {
+    console.error('Playlist by ID failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//TODO: add routes for
+//? sahring a playlist with a user based on their email /playlists/my/:id/share
+//? getting all playlists shared with "me" /playlists/shared-with-me
 
 export default router;

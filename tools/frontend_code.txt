@@ -113,16 +113,78 @@ src/App.css
   gap: 2rem;
 }
 
-.nav a {
+.nav a,
+.nav-tab {
   color: rgba(255, 255, 255, 0.6);
   text-decoration: none;
   font-weight: 500;
   font-size: 0.95rem;
   transition: color 0.2s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
 }
 
-.nav a:hover {
+.nav a:hover,
+.nav-tab:hover {
   color: rgba(216, 180, 254, 0.9);
+}
+
+.nav-tab-active {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.nav-auth-loading {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.25rem;
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-user-email {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-login,
+.nav-logout {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-login {
+  color: #fff;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border: none;
+}
+
+.nav-login:hover {
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+}
+
+.nav-logout {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-logout:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .main {
@@ -404,6 +466,12 @@ src/App.css
   text-overflow: ellipsis;
 }
 
+.library-placeholder {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
 ========================================================================
 src/App.jsx
 ========================================================================
@@ -412,14 +480,24 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import TopSongListItem from './components/TopSongListItem'
 import PlaylistCard from './components/PlaylistCard'
+import AuthModal from './components/AuthModal'
+import PlaylistsTab from './components/PlaylistsTab'
+import { useAuth } from './context/AuthContext'
 
 function App() {
+  const { user, loading: authLoading, login, register, logout } = useAuth()
+  const [activeTab, setActiveTab] = useState('discover')
+  const [authModalOpen, setAuthModalOpen] = useState(false)
   const [songs, setSongs] = useState([])
   const [playlists, setPlaylists] = useState([])
   const [loading, setLoading] = useState(true)
   const [playlistsLoading, setPlaylistsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [playlistsError, setPlaylistsError] = useState(null)
+
+  useEffect(() => {
+    if (!user && activeTab === 'playlists') setActiveTab('discover')
+  }, [user, activeTab])
 
   useEffect(() => {
     fetch('/api/songs/popular')
@@ -442,20 +520,85 @@ function App() {
       <header className="header">
         <h1 className="logo">Motify</h1>
         <nav className="nav">
-          <a href="#discover">Discover</a>
-          <a href="#library">Library</a>
+          <button
+            type="button"
+            className={`nav-tab ${activeTab === 'discover' ? 'nav-tab-active' : ''}`}
+            onClick={() => setActiveTab('discover')}
+          >
+            Discover
+          </button>
+          <button
+            type="button"
+            className={`nav-tab ${activeTab === 'library' ? 'nav-tab-active' : ''}`}
+            onClick={() => setActiveTab('library')}
+          >
+            Library
+          </button>
+          {user && (
+            <button
+              type="button"
+              className={`nav-tab ${activeTab === 'playlists' ? 'nav-tab-active' : ''}`}
+              onClick={() => setActiveTab('playlists')}
+            >
+              Playlists
+            </button>
+          )}
+          {authLoading ? (
+            <span className="nav-auth-loading">…</span>
+          ) : user ? (
+            <div className="nav-user">
+              <span className="nav-user-email">{user.email}</span>
+              <button
+                type="button"
+                className="nav-logout"
+                onClick={logout}
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="nav-login"
+              onClick={() => setAuthModalOpen(true)}
+            >
+              Log in
+            </button>
+          )}
         </nav>
       </header>
 
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={{ login, register }}
+      />
+
       <main className="main">
+        {activeTab === 'playlists' ? (
+          <PlaylistsTab />
+        ) : activeTab === 'library' ? (
+          <section className="library-placeholder">
+            <h2 className="section-title">Library</h2>
+            <p className="section-subtitle">Your saved music and playlists</p>
+            <p className="playlists-loading">Coming soon.</p>
+          </section>
+        ) : (
+          <>
         <section className="hero">
           <p className="tagline">Music at your fingertips</p>
           <p className="subtitle">
             Discover artists, build playlists, and lose yourself in sound.
           </p>
-          <button className="cta" type="button">
-            Get started
-          </button>
+          {!user && (
+            <button
+              className="cta"
+              type="button"
+              onClick={() => setAuthModalOpen(true)}
+            >
+              Get started
+            </button>
+          )}
         </section>
 
         <section className="top-songs">
@@ -497,12 +640,298 @@ function App() {
             </div>
           )}
         </section>
+          </>
+        )}
       </main>
     </div>
   )
 }
 
 export default App
+
+========================================================================
+src/components/AuthModal.css
+========================================================================
+
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: auth-fade-in 0.2s ease;
+}
+
+@keyframes auth-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.auth-modal {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  background: linear-gradient(180deg, #1f1b28 0%, #1a1625 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+  animation: auth-slide-up 0.25s ease;
+}
+
+@keyframes auth-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.auth-modal-close:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.auth-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.98);
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.auth-modal-subtitle {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 1.5rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.auth-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.auth-input {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.auth-input:focus {
+  border-color: rgba(124, 58, 237, 0.6);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+}
+
+.auth-error {
+  font-size: 0.875rem;
+  color: #f87171;
+  margin: 0;
+}
+
+.auth-submit {
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.auth-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+}
+
+.auth-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-switch {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 1.5rem 0 0;
+  text-align: center;
+}
+
+.auth-switch-btn {
+  background: none;
+  border: none;
+  color: rgba(216, 180, 254, 0.95);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+
+.auth-switch-btn:hover {
+  color: #e9d5ff;
+}
+
+========================================================================
+src/components/AuthModal.jsx
+========================================================================
+
+import { useState } from 'react'
+import './AuthModal.css'
+
+export default function AuthModal({ isOpen, onClose, onSuccess }) {
+  const [mode, setMode] = useState('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSubmitting(true)
+    try {
+      if (mode === 'login') {
+        await onSuccess.login(email, password)
+      } else {
+        await onSuccess.register(email, password)
+      }
+      onClose()
+    } catch (err) {
+      setError(err.message || 'Something went wrong')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const switchMode = () => {
+    setMode((m) => (m === 'login' ? 'register' : 'login'))
+    setError('')
+    setEmail('')
+    setPassword('')
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="auth-modal-overlay" onClick={onClose} role="presentation">
+      <div
+        className="auth-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+      >
+        <button
+          type="button"
+          className="auth-modal-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          ×
+        </button>
+        <h2 id="auth-modal-title" className="auth-modal-title">
+          {mode === 'login' ? 'Log in' : 'Create account'}
+        </h2>
+        <p className="auth-modal-subtitle">
+          {mode === 'login'
+            ? 'Welcome back. Sign in to continue.'
+            : 'Join Motify to save your playlists and more.'}
+        </p>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <label htmlFor="auth-email" className="auth-label">
+            Email
+          </label>
+          <input
+            id="auth-email"
+            type="email"
+            className="auth-input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            required
+            autoComplete="email"
+          />
+          <label htmlFor="auth-password" className="auth-label">
+            Password
+          </label>
+          <input
+            id="auth-password"
+            type="password"
+            className="auth-input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+            minLength={6}
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          />
+          {error && <p className="auth-error">{error}</p>}
+          <button
+            type="submit"
+            className="auth-submit"
+            disabled={submitting}
+          >
+            {submitting ? 'Please wait...' : mode === 'login' ? 'Log in' : 'Sign up'}
+          </button>
+        </form>
+        <p className="auth-switch">
+          {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
+          <button type="button" className="auth-switch-btn" onClick={switchMode}>
+            {mode === 'login' ? 'Sign up' : 'Log in'}
+          </button>
+        </p>
+      </div>
+    </div>
+  )
+}
 
 ========================================================================
 src/components/PlaylistCard.jsx
@@ -522,6 +951,927 @@ export default function PlaylistCard({ playlist }) {
         </p>
       </div>
     </article>
+  )
+}
+
+========================================================================
+src/components/PlaylistsTab.css
+========================================================================
+
+.playlists-tab {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.playlists-tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.playlists-create-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+}
+
+.playlists-create-btn:hover {
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+}
+
+.playlists-empty {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+}
+
+.playlists-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.playlist-row {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: background 0.15s ease;
+}
+
+.playlist-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.playlist-row-expanded {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.playlist-row-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+.playlist-row-expand {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.playlist-row-expand:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.playlist-row-chevron {
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: transform 0.2s ease;
+}
+
+.playlist-row-chevron-open {
+  transform: rotate(90deg);
+}
+
+.playlist-row-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.playlist-row-content-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.playlist-row-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0 0 0.25rem;
+}
+
+.playlist-row-meta {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+}
+
+.playlist-row-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.playlist-row-edit,
+.playlist-row-delete,
+.playlist-row-delete-confirm,
+.playlist-row-cancel {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.playlist-row-edit {
+  color: rgba(216, 180, 254, 0.9);
+  background: rgba(124, 58, 237, 0.2);
+  border: none;
+}
+
+.playlist-row-edit:hover {
+  background: rgba(124, 58, 237, 0.3);
+}
+
+.playlist-row-delete {
+  color: rgba(248, 113, 113, 0.9);
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.playlist-row-delete:hover {
+  background: rgba(248, 113, 113, 0.2);
+}
+
+.playlist-row-delete-confirm {
+  color: #fff;
+  background: #dc2626;
+  border: none;
+}
+
+.playlist-row-delete-confirm:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.playlist-row-cancel {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.playlist-row-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Expanded playlist songs */
+.playlist-row-songs {
+  padding: 0 1.25rem 1rem;
+  padding-left: calc(1.25rem + 1.75rem + 0.75rem);
+}
+
+.playlist-row-songs-empty {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+  padding: 0.75rem 0;
+}
+
+.playlist-expanded-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.playlist-expanded-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.playlist-expanded-item:last-child {
+  border-bottom: none;
+}
+
+.playlist-expanded-rank {
+  width: 1.5rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.playlist-expanded-title {
+  flex: 1;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-expanded-artist {
+  flex: 1;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-expanded-duration {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.playlist-form-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.playlist-form-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #1f1b28 0%, #1a1625 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+}
+
+.playlist-form-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.98);
+  margin: 0 0 1.5rem;
+}
+
+.playlist-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.playlist-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.playlist-form-cancel {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.playlist-form-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Songs section in playlist form */
+.playlist-songs-section {
+  margin-top: 0.5rem;
+}
+
+.playlist-songs-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.playlist-songs-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.9rem;
+}
+
+.playlist-songs-item:last-child {
+  border-bottom: none;
+}
+
+.playlist-songs-rank {
+  width: 1.5rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.playlist-songs-title {
+  flex: 1;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-songs-artist {
+  flex: 1;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-songs-duration {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.playlist-songs-remove {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: rgba(248, 113, 113, 0.9);
+  background: rgba(248, 113, 113, 0.1);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.playlist-songs-remove:hover {
+  background: rgba(248, 113, 113, 0.2);
+}
+
+.playlist-add-song {
+  margin-top: 0.5rem;
+}
+
+.playlist-add-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(216, 180, 254, 0.95);
+  background: rgba(124, 58, 237, 0.2);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.playlist-add-btn:hover {
+  background: rgba(124, 58, 237, 0.3);
+}
+
+.playlist-add-song-picker {
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.playlist-song-search {
+  margin-bottom: 0.75rem;
+}
+
+.playlist-songs-loading,
+.playlist-songs-empty {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 0.5rem;
+}
+
+.playlist-add-list {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.playlist-add-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.9);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease;
+}
+
+.playlist-add-item:hover {
+  background: rgba(124, 58, 237, 0.2);
+}
+
+.playlist-add-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.playlist-add-artist {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.playlist-add-close {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.playlist-add-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+========================================================================
+src/components/PlaylistsTab.jsx
+========================================================================
+
+import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '../context/AuthContext'
+import './PlaylistsTab.css'
+
+function formatDuration(seconds) {
+  if (!seconds) return '--'
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+export default function PlaylistsTab() {
+  const { user, getAccessToken } = useAuth()
+  const [playlists, setPlaylists] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [selectedSongs, setSelectedSongs] = useState([])
+  const [allSongs, setAllSongs] = useState([])
+  const [songsLoading, setSongsLoading] = useState(false)
+  const [addSongOpen, setAddSongOpen] = useState(false)
+  const [songSearch, setSongSearch] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [expandedId, setExpandedId] = useState(null)
+
+  const toggleExpand = (id) => {
+    setExpandedId((prev) => (prev === id ? null : id))
+  }
+
+  const fetchPlaylists = useCallback(async () => {
+    if (!user?.id) return
+    const token = getAccessToken()
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/playlists?user=${user.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (!res.ok) throw new Error('Failed to load playlists')
+      const data = await res.json()
+      setPlaylists(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [user?.id, getAccessToken])
+
+  useEffect(() => {
+    fetchPlaylists()
+  }, [fetchPlaylists])
+
+  const openCreate = () => {
+    setEditing(null)
+    setName('')
+    setDescription('')
+    setSelectedSongs([])
+    setFormError('')
+    setAddSongOpen(false)
+    setSongSearch('')
+    setFormOpen(true)
+  }
+
+  const openEdit = async (p) => {
+    setEditing(p)
+    setName(p.name)
+    setDescription(p.description || '')
+    setFormError('')
+    setAddSongOpen(false)
+    setSongSearch('')
+    setFormOpen(true)
+    if (p.songs?.length) {
+      setSelectedSongs(p.songs.map((s) => ({ _id: s._id, title: s.title, artist: s.artist, durationSeconds: s.durationSeconds })))
+    } else {
+      setSelectedSongs([])
+    }
+  }
+
+  const closeForm = () => {
+    setFormOpen(false)
+    setEditing(null)
+    setFormError('')
+    setAddSongOpen(false)
+  }
+
+  useEffect(() => {
+    if (formOpen && allSongs.length === 0) {
+      setSongsLoading(true)
+      fetch('/api/songs')
+        .then((res) => res.json())
+        .then((data) => setAllSongs(data))
+        .finally(() => setSongsLoading(false))
+    }
+  }, [formOpen, allSongs.length])
+
+  const addSong = (song) => {
+    if (selectedSongs.some((s) => s._id === song._id)) return
+    setSelectedSongs((prev) => [...prev, song])
+    setAddSongOpen(false)
+    setSongSearch('')
+  }
+
+  const removeSong = (songId) => {
+    setSelectedSongs((prev) => prev.filter((s) => s._id !== songId))
+  }
+
+  const availableToAdd = allSongs.filter(
+    (s) => !selectedSongs.some((sel) => sel._id === s._id) &&
+      (!songSearch || s.title.toLowerCase().includes(songSearch.toLowerCase()) ||
+        (s.artist?.name || '').toLowerCase().includes(songSearch.toLowerCase()))
+  ).slice(0, 10)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setFormError('')
+    setSubmitting(true)
+    const token = getAccessToken()
+    try {
+      const body = {
+        name: name.trim(),
+        description: description.trim() || null,
+        songs: selectedSongs.map((s) => s._id),
+      }
+      if (editing) {
+        const res = await fetch(`/api/playlists/${editing._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Update failed')
+        }
+      } else {
+        const res = await fetch('/api/playlists', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Create failed')
+        }
+      }
+      closeForm()
+      fetchPlaylists()
+    } catch (err) {
+      setFormError(err.message || 'Something went wrong')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (p) => {
+    const token = getAccessToken()
+    setSubmitting(true)
+    try {
+      const res = await fetch(`/api/playlists/${p._id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error('Delete failed')
+      setDeleteConfirm(null)
+      fetchPlaylists()
+    } catch (err) {
+      setFormError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (!user) return null
+
+  return (
+    <div className="playlists-tab">
+      <div className="playlists-tab-header">
+        <div>
+          <h2 className="section-title">My playlists</h2>
+          <p className="section-subtitle">Create and manage your playlists</p>
+        </div>
+        <button type="button" className="playlists-create-btn" onClick={openCreate}>
+          + New playlist
+        </button>
+      </div>
+
+      {loading && <p className="playlists-loading">Loading...</p>}
+      {error && <p className="playlists-error">{error}</p>}
+      {formError && <p className="playlists-error">{formError}</p>}
+
+      {!loading && !error && playlists.length === 0 && (
+        <div className="playlists-empty">
+          <p>No playlists yet. Create one to get started.</p>
+        </div>
+      )}
+
+      {!loading && !error && playlists.length > 0 && (
+        <div className="playlists-list">
+          {playlists.map((p) => {
+            const isExpanded = expandedId === p._id
+            const songs = p.songs ?? []
+            return (
+              <div key={p._id} className={`playlist-row ${isExpanded ? 'playlist-row-expanded' : ''}`}>
+                <div className="playlist-row-header">
+                  <button
+                    type="button"
+                    className="playlist-row-expand"
+                    onClick={() => toggleExpand(p._id)}
+                    aria-expanded={isExpanded}
+                    aria-label={isExpanded ? 'Collapse playlist' : 'Expand playlist'}
+                  >
+                    <span className={`playlist-row-chevron ${isExpanded ? 'playlist-row-chevron-open' : ''}`}>›</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="playlist-row-content playlist-row-content-btn"
+                    onClick={() => toggleExpand(p._id)}
+                  >
+                    <h3 className="playlist-row-title">{p.name}</h3>
+                    <p className="playlist-row-meta">
+                      {songs.length} {songs.length === 1 ? 'song' : 'songs'}
+                      {p.description && ` · ${p.description}`}
+                    </p>
+                  </button>
+                  <div className="playlist-row-actions">
+                    <button
+                      type="button"
+                      className="playlist-row-edit"
+                      onClick={(e) => { e.stopPropagation(); openEdit(p) }}
+                      disabled={submitting}
+                    >
+                      Edit
+                    </button>
+                    {deleteConfirm?._id === p._id ? (
+                      <>
+                        <button
+                          type="button"
+                          className="playlist-row-delete-confirm"
+                          onClick={() => handleDelete(p)}
+                          disabled={submitting}
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          type="button"
+                          className="playlist-row-cancel"
+                          onClick={() => setDeleteConfirm(null)}
+                          disabled={submitting}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        className="playlist-row-delete"
+                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(p) }}
+                        disabled={submitting}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {isExpanded && (
+                  <div className="playlist-row-songs">
+                    {songs.length === 0 ? (
+                      <p className="playlist-row-songs-empty">No songs in this playlist</p>
+                    ) : (
+                      <ul className="playlist-expanded-list">
+                        {songs.map((s, i) => (
+                          <li key={s._id} className="playlist-expanded-item">
+                            <span className="playlist-expanded-rank">{i + 1}</span>
+                            <span className="playlist-expanded-title">{s.title}</span>
+                            <span className="playlist-expanded-artist">{s.artist?.name ?? '—'}</span>
+                            <span className="playlist-expanded-duration">{formatDuration(s.durationSeconds)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {formOpen && (
+        <div className="playlist-form-overlay" onClick={closeForm} role="presentation">
+          <div
+            className="playlist-form-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <h3 className="playlist-form-title">
+              {editing ? 'Edit playlist' : 'New playlist'}
+            </h3>
+            <form onSubmit={handleSubmit} className="playlist-form">
+              <label htmlFor="playlist-name" className="auth-label">
+                Name
+              </label>
+              <input
+                id="playlist-name"
+                type="text"
+                className="auth-input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Playlist name"
+                required
+              />
+              <label htmlFor="playlist-desc" className="auth-label">
+                Description (optional)
+              </label>
+              <input
+                id="playlist-desc"
+                type="text"
+                className="auth-input"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="What's this playlist about?"
+              />
+
+              <div className="playlist-songs-section">
+                <label className="auth-label">Songs</label>
+                {selectedSongs.length > 0 && (
+                  <ul className="playlist-songs-list">
+                    {selectedSongs.map((s, i) => (
+                      <li key={s._id} className="playlist-songs-item">
+                        <span className="playlist-songs-rank">{i + 1}</span>
+                        <span className="playlist-songs-title">{s.title}</span>
+                        <span className="playlist-songs-artist">{s.artist?.name ?? '—'}</span>
+                        <span className="playlist-songs-duration">{formatDuration(s.durationSeconds)}</span>
+                        <button
+                          type="button"
+                          className="playlist-songs-remove"
+                          onClick={() => removeSong(s._id)}
+                          aria-label={`Remove ${s.title}`}
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="playlist-add-song">
+                  {addSongOpen ? (
+                    <div className="playlist-add-song-picker">
+                      <input
+                        type="text"
+                        className="auth-input playlist-song-search"
+                        placeholder="Search songs..."
+                        value={songSearch}
+                        onChange={(e) => setSongSearch(e.target.value)}
+                        autoFocus
+                      />
+                      {songsLoading ? (
+                        <p className="playlist-songs-loading">Loading songs...</p>
+                      ) : availableToAdd.length === 0 ? (
+                        <p className="playlist-songs-empty">
+                          {selectedSongs.length >= allSongs.length
+                            ? 'All songs added'
+                            : songSearch ? 'No matches' : 'No songs in catalog'}
+                        </p>
+                      ) : (
+                        <ul className="playlist-add-list">
+                          {availableToAdd.map((s) => (
+                            <li key={s._id}>
+                              <button
+                                type="button"
+                                className="playlist-add-item"
+                                onClick={() => addSong(s)}
+                              >
+                                <span className="playlist-add-title">{s.title}</span>
+                                <span className="playlist-add-artist">{s.artist?.name ?? '—'}</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <button
+                        type="button"
+                        className="playlist-add-close"
+                        onClick={() => { setAddSongOpen(false); setSongSearch('') }}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="playlist-add-btn"
+                      onClick={() => setAddSongOpen(true)}
+                    >
+                      + Add song
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="playlist-form-actions">
+                <button
+                  type="button"
+                  className="playlist-form-cancel"
+                  onClick={closeForm}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="auth-submit"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Saving...' : editing ? 'Save' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -566,6 +1916,122 @@ export default function TopSongListItem({ song, rank }) {
 }
 
 ========================================================================
+src/context/AuthContext.jsx
+========================================================================
+
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+
+const AuthContext = createContext(null)
+
+const STORAGE_ACCESS = 'motify_access'
+const STORAGE_REFRESH = 'motify_refresh'
+const STORAGE_USER = 'motify_user'
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const persistAuth = useCallback((accessToken, refreshToken, userData) => {
+    localStorage.setItem(STORAGE_ACCESS, accessToken)
+    localStorage.setItem(STORAGE_REFRESH, refreshToken)
+    localStorage.setItem(STORAGE_USER, JSON.stringify(userData))
+  }, [])
+
+  const clearAuth = useCallback(() => {
+    localStorage.removeItem(STORAGE_ACCESS)
+    localStorage.removeItem(STORAGE_REFRESH)
+    localStorage.removeItem(STORAGE_USER)
+    setUser(null)
+  }, [])
+
+  const login = useCallback(async (email, password) => {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Login failed')
+    persistAuth(data.accessToken, data.refreshToken, data.user)
+    setUser(data.user)
+  }, [persistAuth])
+
+  const register = useCallback(async (email, password) => {
+    const res = await fetch('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Registration failed')
+    persistAuth(data.accessToken, data.refreshToken, data.user)
+    setUser(data.user)
+  }, [persistAuth])
+
+  const logout = useCallback(() => {
+    clearAuth()
+  }, [clearAuth])
+
+  const getAccessToken = useCallback(() => localStorage.getItem(STORAGE_ACCESS), [])
+
+  useEffect(() => {
+    const access = localStorage.getItem(STORAGE_ACCESS)
+    const stored = localStorage.getItem(STORAGE_USER)
+    if (!access || !stored) {
+      setLoading(false)
+      return
+    }
+
+    const verify = async () => {
+      try {
+        const res = await fetch('/auth/me', {
+          headers: { Authorization: `Bearer ${access}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setUser(data.user)
+          return
+        }
+        const refresh = localStorage.getItem(STORAGE_REFRESH)
+        if (!refresh) {
+          clearAuth()
+          return
+        }
+        const refreshRes = await fetch('/auth/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: refresh }),
+        })
+        const refreshData = await refreshRes.json()
+        if (!refreshRes.ok) {
+          clearAuth()
+          return
+        }
+        persistAuth(refreshData.accessToken, refreshData.refreshToken, JSON.parse(stored))
+        setUser(JSON.parse(stored))
+      } catch {
+        clearAuth()
+      } finally {
+        setLoading(false)
+      }
+    }
+    verify()
+  }, [clearAuth, persistAuth])
+
+  return (
+    <AuthContext.Provider value={{ user, loading, login, register, logout, getAccessToken }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+  return ctx
+}
+
+========================================================================
 src/index.css
 ========================================================================
 
@@ -598,11 +2064,14 @@ src/main.jsx
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import { AuthProvider } from './context/AuthContext'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </StrictMode>,
 )
 
