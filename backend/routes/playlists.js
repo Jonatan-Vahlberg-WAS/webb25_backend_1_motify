@@ -108,6 +108,9 @@ router.delete('/my/:id', requireAuth, isPlaylistOwner, async (req, res) => {
  * Must be registered after /my so /my is not interpreted as an id.
  */
 router.get('/:id', async (req, res) => {
+  if(req.params.id.startsWith('shared-with-') || req.params.id.startsWith('my/')) {
+    return res.status(404).json({ error: 'Endpoint not implemented correctly' });
+  }
   try {
     const playlist = await Playlist.findOne({
       _id: req.params.id,
