@@ -44,7 +44,13 @@ router.get("/shared-with-me", requireAuth, async (req, res) => {
   try {
     const shares = await Share.find({ sharedWith: req.user._id }).populate({
       path: "playlist",
-      populate: { path: "user", select: "email" },
+      populate: [
+        {
+          path: "songs",
+          populate: { path: "artist", select: "name" },
+        },
+        { path: "user", select: "email" },
+      ],
     });
 
     const playlists = shares
