@@ -175,6 +175,13 @@ router.post("/my/:id/share", requireAuth, isPlaylistOwner, async (req, res) => {
       sharedWith: user.email,
     });
   } catch (error) {
+    if (error.code === 11000) {
+      console.error("This playlist is already shared with this user");
+      return res
+        .status(400)
+        .json({ error: "This playlist is already shared with this user" });
+    }
+
     console.error("Sharing failed:", error.message);
     res.status(500).json({ error: "Could not share playlist" });
   }
