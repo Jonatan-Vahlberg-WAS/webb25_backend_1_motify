@@ -39,6 +39,25 @@ router.get("/my", requireAuth, async (req, res) => {
   }
 });
 
+//? getting all playlists shared with "me" /playlists/shared-with-me
+router.get("/shared-with-me", requireAuth, async (req, res) => {
+  try {
+    const shares = await Share.find({ sharedWith: req.user._id }).populate({
+      path: "playlist",
+      populate: { path: "user", select: "email" },
+    });
+
+    const playlists = shares
+      .filter((s) => s.playlist !== null)
+      .map((s) => s.playlist);
+
+    res.json(playlists);
+  } catch (error) {
+    console.error("Shared-with-me failed:", error.message);
+    res.status(500).json({ error: "Could not fetch shared playlists" });
+  }
+});
+
 /**
  * Get all playlists that are publicly accessible
  */
@@ -71,71 +90,6 @@ router.post("/my", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("Create playlist failed:", err.message);
     res.status(400).json({ error: err.message });
-  }
-});
-
-router.put("/my/:id", requireAuth, isPlaylistOwner, async (req, res) => {
-  try {
-    const playlist = await Playlist.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    })
-      .populate("songs", "title artist durationSeconds")
-      .populate("user", "email");
-    if (!playlist) {
-      console.error("Update playlist: Playlist not found");
-      return res.status(404).json({ error: "Playlist not found" });
-    }
-    res.json(playlist);
-  } catch (err) {
-    console.error("Update playlist failed:", err.message);
-    res.status(400).json({ error: err.message });
-  }
-});
-
-router.delete("/my/:id", requireAuth, isPlaylistOwner, async (req, res) => {
-  try {
-    const playlist = await Playlist.findByIdAndDelete(req.params.id);
-    if (!playlist) {
-      console.error("Delete playlist: Playlist not found");
-      return res.status(404).json({ error: "Playlist not found" });
-    }
-    res.status(204).send();
-  } catch (err) {
-    console.error("Delete playlist failed:", err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/**
- * Get a publicly accessible playlist by ID (user must be null on the document).
- * Must be registered after /my so /my is not interpreted as an id.
- */
-router.get("/:id", async (req, res) => {
-  if (
-    req.params.id.startsWith("shared-with-") ||
-    req.params.id.startsWith("my/")
-  ) {
-    return res
-      .status(404)
-      .json({ error: "Endpoint not implemented correctly" });
-  }
-  try {
-    const playlist = await Playlist.findOne({
-      _id: req.params.id,
-      user: null,
-    }).populate({
-      path: "songs",
-      populate: { path: "artist", select: "name" },
-    });
-    if (!playlist) {
-      console.error("Playlist by ID: Playlist not found");
-      return res.status(404).json({ error: "Playlist not found" });
-    }
-    res.json(playlist);
-  } catch (err) {
-    console.error("Playlist by ID failed:", err.message);
-    res.status(500).json({ error: err.message });
   }
 });
 
@@ -190,20 +144,72 @@ router.post("/my/:id/share", requireAuth, isPlaylistOwner, async (req, res) => {
   }
 });
 
-//? getting all playlists shared with "me" /playlists/shared-with-me
-router.get("/shared-with-me", requireAuth, async (req, res) => {
+router.put("/my/:id", requireAuth, isPlaylistOwner, async (req, res) => {
   try {
-    const shares = await Share.find({ sharedWith: req.user._id }).populate({
-      path: "playlist",
-      populate: { path: "user", select: "email" },
+    const playlist = await Playlist.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    })
+      .populate("songs", "title artist durationSeconds")
+      .populate("user", "email");
+    if (!playlist) {
+      console.error("Update playlist: Playlist not found");
+      return res.status(404).json({ error: "Playlist not found" });
+    }
+    res.json(playlist);
+  } catch (err) {
+    console.error("Update playlist failed:", err.message);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.delete("/my/:id", requireAuth, isPlaylistOwner, async (req, res) => {
+  try {
+    const playlist = await Playlist.findByIdAndDelete(req.params.id);
+
+    if (!playlist) {
+      console.error("Delete playlist: Playlist not found");
+      return res.status(404).json({ error: "Playlist not found" });
+    }
+
+    await Share.deleteMany({ playlist: req.params.id });
+
+    res.status(204).send();
+  } catch (err) {
+    console.error("Delete playlist failed:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Get a publicly accessible playlist by ID (user must be null on the document).
+ * Must be registered after /my so /my is not interpreted as an id.
+ */
+router.get("/:id", async (req, res) => {
+  if (
+    req.params.id.startsWith("shared-with-") ||
+    req.params.id.startsWith("my/")
+  ) {
+    return res
+      .status(404)
+      .json({ error: "Endpoint not implemented correctly" });
+  }
+  try {
+    const playlist = await Playlist.findOne({
+      _id: req.params.id,
+      user: null,
+    }).populate({
+      path: "songs",
+      populate: { path: "artist", select: "name" },
     });
-
-    const playlists = shares.map((s) => s.playlist);
-
-    res.json(playlists);
-  } catch (error) {
-    console.error("Shared-with-me failed:", error.message);
-    res.status(500).json({ error: "Could not fetch shared playlists" });
+    if (!playlist) {
+      console.error("Playlist by ID: Playlist not found");
+      return res.status(404).json({ error: "Playlist not found" });
+    }
+    res.json(playlist);
+  } catch (err) {
+    console.error("Playlist by ID failed:", err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
