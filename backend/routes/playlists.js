@@ -58,17 +58,28 @@ router.get("/shared-with-me", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/shared-with-me/:id", requireAuth, isPlaylistSharedWithUser, async (req, res) => {
-  try {
-    const playlist = await Playlist.findById(req.params.id)
-      .populate("songs")
-      .populate("user", "email");
+router.get(
+  "/shared-with-me/:id",
+  requireAuth,
+  isPlaylistSharedWithUser,
+  async (req, res) => {
+    try {
+      const playlist = await Playlist.findById(req.params.id)
+        .populate({
+          path: "songs",
+          select: "title artist album durationSeconds",
+          populate: [
+            { path: "artist", select: "name" },
+            { path: "album", select: "title" },
+          ],
+        })
+        .populate("user", "email");
 
-    res.json(playlist);
-  } catch (error) {
-    console.error("Shared-with-me failed:", error.message);
-    res.status(500).json({ error: "Could not fetch shared playlist" });
-  }
+      res.json(playlist);
+    } catch (error) {
+      console.error("Shared-with-me failed:", error.message);
+      res.status(500).json({ error: "Could not fetch shared playlist" });
+    }
   },
 );
 
