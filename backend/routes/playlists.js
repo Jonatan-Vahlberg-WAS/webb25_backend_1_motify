@@ -1,7 +1,10 @@
 import { Router } from "express";
 import Playlist from "../models/Playlist.js";
 import { requireAuth } from "../middleware/auth.js";
-import { isPlaylistOwner } from "../middleware/ownership.js";
+import {
+  isPlaylistOwner,
+  isPlaylistSharedWithUser,
+} from "../middleware/ownership.js";
 import User from "../models/User.js";
 import Share from "../models/Share.js";
 
@@ -188,5 +191,20 @@ router.post("/my/:id/share", requireAuth, isPlaylistOwner, async (req, res) => {
 });
 
 //? getting all playlists shared with "me" /playlists/shared-with-me
+router.get("/shared-with-me", requireAuth, async (req, res) => {
+  try {
+    const shares = await Share.find({ sharedWith: req.user._id }).populate({
+      path: "playlist",
+      populate: { path: "user", select: "email" },
+    });
+
+    const playlists = shares.map((s) => s.playlist);
+
+    res.json(playlists);
+  } catch (error) {
+    console.error("Shared-with-me failed:", error.message);
+    res.status(500).json({ error: "Could not fetch shared playlists" });
+  }
+});
 
 export default router;
