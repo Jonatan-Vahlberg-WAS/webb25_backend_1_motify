@@ -1,4 +1,5 @@
 import Playlist from "../models/Playlist.js";
+import Share from "../models/Share.js";
 
 export const isPlaylistOwner = async (req, res, next) => {
   const playlist = await Playlist.findById(req.params.id);
@@ -36,6 +37,6 @@ export const isPlaylistSharedWithUser = async (req, res, next) => {
 
     next();
   } catch (error) {
-    res.status(500).json({ error: 'Could not share check' });
+    res.status(500).json({ error: 'Authorization check failed' });
   }
 };
