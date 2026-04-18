@@ -158,6 +158,13 @@ router.post("/my/:id/share", requireAuth, isPlaylistOwner, async (req, res) => {
         .json({ error: "No user found with that email address" });
     }
 
+    if (user._id.equals(req.user._id)) {
+      console.error("You cannot share a playlist with yourself");
+      return res
+        .status(400)
+        .json({ error: "You cannot share a playlist with yourself" });
+    }
+
     const share = await Share.create({
       playlist: req.params.id,
       sharedWith: user._id,
