@@ -25,12 +25,12 @@ export const isPlaylistOwner = async (req, res, next) => {
 export const isPlaylistSharedWithUser = async (req, res, next) => {
   // TODO: Implement this (student / course extension)
   try {
-    const share = await Share.findOne({
+    const shared = await Share.findOne({
       playlist: req.params.id,
       sharedWith: req.user._id,
     });
 
-    if (!share) {
+    if (!shared) {
       console.error("Access: Playlist not shared with user");
       return res.status(403).json({ error: "You do not have access to this shared playlist" });
     }
