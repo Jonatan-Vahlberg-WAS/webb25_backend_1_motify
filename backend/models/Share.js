@@ -13,4 +13,6 @@ const shareSchema = new mongoose.Schema({
   },
 });
 
+shareSchema.index({ playlist: 1, sharedWith: 1 }, { unique: true });
+
 export default mongoose.model("Share", shareSchema);
