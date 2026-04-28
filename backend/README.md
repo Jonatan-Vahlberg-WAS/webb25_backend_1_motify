@@ -88,7 +88,7 @@ Use the refresh endpoint when the access token is rejected. Mutating data elsewh
 
 ### Playlists
 
-Playlists distinguish **public** lists (`user` is `null` on the document) from **owned** lists (a `User` reference). The exact rules are implemented in `routes/playlists.js`; read that file for filters and populations.
+Playlists distinguish between **public** lists (`user` is `null` on the document), **owned** lists (a `User` reference), and **shared** lists (via the Share collection). The exact rules are implemented in `routes/playlists.js`; read that file for filters and populations.
 
 - `GET /api/playlists/latest` – Recent **public** playlists (limited count)
 - `GET /api/playlists/my` – Current user’s playlists (**`requireAuth`**)
@@ -99,7 +99,12 @@ Playlists distinguish **public** lists (`user` is `null` on the document) from *
 
 **Express route order:** paths with fixed segments (e.g. `latest`, `my`, `popular`) must be registered **before** a catch‑all like `/:id`. Otherwise a segment such as `my` could be parsed as an `:id`.
 
-Extension work (sharing) is outlined at the repo level in [../docs/SHARE_SYSTEM.md](../docs/SHARE_SYSTEM.md). Look for `TODO` comments in `routes/playlists.js` and the stub middleware in `middleware/ownership.js`.
+#### Sharing
+- `POST /api/playlists/my/:id/share` – Share an owned playlist with another user via email (**`requireAuth`** + ownership middleware)
+- `GET /api/playlists/shared-with-me` – Playlists others have shared with the user (**`requireAuth`**)
+- `GET /api/playlists/shared-with-me/:id` – Detailed view of a specific shared playlist (**`requireAuth`** + sharing middleware)
+
+**Security:** Routes starting with `/my` use `isPlaylistOwner` to ensure only the creator can modify data. Shared routes use `isPlaylistSharedWithUser` to verify that a sharing relationship exists in the database.
 
 ### Utils and scripts
 

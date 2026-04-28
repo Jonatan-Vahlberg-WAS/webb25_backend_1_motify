@@ -505,3 +505,26 @@
 .playlist-add-close:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
+.playlist-row-share {
+  color: rgba(167, 243, 208, 0.9); /* Grönaktig ton för share */
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.playlist-row-share:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.share-success-msg {
+  color: #10b981;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
