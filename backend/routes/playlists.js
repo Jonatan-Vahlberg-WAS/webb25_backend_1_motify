@@ -39,7 +39,7 @@ router.get("/my", requireAuth, async (req, res) => {
   }
 });
 
-//? getting all playlists shared with "me" /playlists/shared-with-me
+// Route for getting all playlists shared with "me" /playlists/shared-with-me
 router.get("/shared-with-me", requireAuth, async (req, res) => {
   try {
     const shares = await Share.find({ sharedWith: req.user._id }).populate({
@@ -64,30 +64,26 @@ router.get("/shared-with-me", requireAuth, async (req, res) => {
   }
 });
 
-router.get(
-  "/shared-with-me/:id",
-  requireAuth,
-  isPlaylistSharedWithUser,
-  async (req, res) => {
-    try {
-      const playlist = await Playlist.findById(req.params.id)
-        .populate({
-          path: "songs",
-          select: "title artist album durationSeconds",
-          populate: [
-            { path: "artist", select: "name" },
-            { path: "album", select: "title" },
-          ],
-        })
-        .populate("user", "email");
+// Route for getting a specific playlist shared with "me" /playlists/shared-with-me/:id
+router.get("/shared-with-me/:id", requireAuth, isPlaylistSharedWithUser, async (req, res) => {
+  try {
+    const playlist = await Playlist.findById(req.params.id)
+      .populate({
+        path: "songs",
+        select: "title artist album durationSeconds",
+        populate: [
+          { path: "artist", select: "name" },
+          { path: "album", select: "title" },
+        ],
+      })
+      .populate("user", "email");
 
-      res.json(playlist);
-    } catch (error) {
-      console.error("Shared-with-me failed:", error.message);
-      res.status(500).json({ error: "Could not fetch shared playlist" });
-    }
-  },
-);
+    res.json(playlist);
+  } catch (error) {
+    console.error("Shared-with-me by id failed:", error.message);
+    res.status(500).json({ error: "Could not fetch shared playlist" });
+  }
+});
 
 /**
  * Get all playlists that are publicly accessible
@@ -124,33 +120,21 @@ router.post("/my", requireAuth, async (req, res) => {
   }
 });
 
-//TODO: add routes for
-//? sharing a playlist with a user based on their email /playlists/my/:id/share
+// Route for sharing a playlist with a user based on their email /playlists/my/:id/share
 router.post("/my/:id/share", requireAuth, isPlaylistOwner, async (req, res) => {
-  const email = req.body.email;
-
-  if (!email) {
-    console.error("Email is required to share a playlist");
-    return res
-      .status(400)
-      .json({ error: "Email is required to share a playlist" });
-  }
-
   try {
-    const user = await User.findOne({ email: email });
+    const email = req.body.email;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required to share a playlist" });
+    }
 
+    const user = await User.findOne({ email: email });
     if (!user) {
-      console.error("No user found with that email address");
-      return res
-        .status(404)
-        .json({ error: "No user found with that email address" });
+      return res.status(404).json({ error: "No user found with that email address" });
     }
 
     if (user._id.equals(req.user._id)) {
-      console.error("You cannot share a playlist with yourself");
-      return res
-        .status(400)
-        .json({ error: "You cannot share a playlist with yourself" });
+      return res.status(400).json({ error: "You cannot share a playlist with yourself" });
     }
 
     const share = await Share.create({
@@ -164,14 +148,11 @@ router.post("/my/:id/share", requireAuth, isPlaylistOwner, async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      console.error("This playlist is already shared with this user");
-      return res
-        .status(400)
-        .json({ error: "This playlist is already shared with this user" });
+      return res.status(400).json({ error: "This playlist is already shared with this user" });
     }
 
     console.error("Sharing failed:", error.message);
-    res.status(500).json({ error: "Could not share playlist" });
+    res.status(500).json({ error: "An unexpected error occurred while sharing" });
   }
 });
 
