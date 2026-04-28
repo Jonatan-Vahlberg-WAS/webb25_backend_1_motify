@@ -20,5 +20,25 @@ export const isPlaylistOwner = async (req, res, next) => {
  * until then, leaving this empty is intentional—see docs/SHARE_SYSTEM.md.
  */
 export const isPlaylistSharedWithUser = async (req, res, next) => {
-  // TODO: Implement this (student / course extension)
+  try {
+    const playlist = await Playlist.findById(req.params.id);
+    if (!playlist) {
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+
+    const userId = req.user._id;
+
+    const isOwner = playlist.user && playlist.user.equals(userId);
+
+    const isShared = playlist.sharedWith && playlist.sharedWith.some(id => id.equals(userId));
+
+    if (!isOwner && !isShared) {
+      return res.status(403).json({ error: 'Not authorized to view this playlist' });
+    }
+
+    req.playlist = playlist;
+    next();
+  } catch (error) {
+    res.status(500).json({ error: 'Server error during authorization' });
+  }
 };

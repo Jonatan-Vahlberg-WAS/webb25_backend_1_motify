@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import Playlist from '../models/Playlist.js';
 import { requireAuth } from '../middleware/auth.js';
-import { isPlaylistOwner } from '../middleware/ownership.js';
+import { isPlaylistOwner, isPlaylistSharedWithUser } from '../middleware/ownership.js';
+import User from '../models/User.js';
 
 const router = Router();
 
@@ -30,6 +31,25 @@ router.get('/my', requireAuth, async (req, res) => {
     res.json(playlists);
   } catch (err) {
     console.error('My playlists failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/shared-with-me', requireAuth,  async (req, res) => {
+  try {
+    const playlists = await Playlist.find({ sharedWith: req.user._id })
+      .populate('songs', 'title artist durationSeconds')
+      .populate('user', 'email');
+    res.json(playlists);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/shared-with-me/:id', requireAuth, isPlaylistSharedWithUser, async (req, res) => {
+  try {
+    res.json(req.playlist); 
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -131,5 +151,30 @@ router.get('/:id', async (req, res) => {
 //TODO: add routes for
 //? sahring a playlist with a user based on their email /playlists/my/:id/share
 //? getting all playlists shared with "me" /playlists/shared-with-me
+
+router.post('/my/:id/share', requireAuth, isPlaylistOwner, async (req, res) => {
+  try {
+  const {userEmail} = req.body
+  const playlistId = req.params.id
+
+  const sharedWith = await User.findOne({email: userEmail})
+
+  if (!sharedWith){
+    return res.status(404).json({message: 'User with that email was not found'})
+  }
+
+  const playlist = await Playlist.findByIdAndUpdate(playlistId, {
+    $addToSet: {sharedWith: sharedWith._id}
+  },
+  {
+    new: true
+  })
+
+  return res.json(playlist)
+  } catch (error) {
+    return res.status(500).json({error: err.message })
+  }
+  
+})
 
 export default router;
