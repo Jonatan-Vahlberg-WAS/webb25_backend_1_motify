@@ -35,6 +35,10 @@ export default function PlaylistsTab() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [expandedKey, setExpandedKey] = useState(null)
 
+  const [sharingPlaylist, setSharingPlaylist] = useState(null); // Spellistan som ska delas
+  const [shareEmail, setShareEmail] = useState('');
+  const [shareSuccess, setShareSuccess] = useState('');
+
   const toggleExpand = (prefix, id) => {
     const key = `${prefix}:${id}`
     setExpandedKey((prev) => (prev === key ? null : key))
@@ -241,6 +245,35 @@ export default function PlaylistsTab() {
     }
   }
 
+  const handleShare = async (e) => {
+  e.preventDefault();
+  setFormError('');
+  setShareSuccess('');
+  setSubmitting(true);
+
+  try {
+    const res = await fetch(`/api/playlists/my/${sharingPlaylist._id}/share`, {
+      method: 'POST',
+      headers: authJsonHeaders(),
+      body: JSON.stringify({ email: shareEmail.trim() }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to share playlist');
+    }
+
+    setShareSuccess(`Shared with ${shareEmail}!`);
+    setShareEmail('');
+    setTimeout(() => setSharingPlaylist(null), 2000);
+  } catch (err) {
+    setFormError(err.message);
+  } finally {
+    setSubmitting(false);
+  }
+};
+
   if (!user) return null
 
   return (
@@ -294,6 +327,14 @@ export default function PlaylistsTab() {
                     </p>
                   </button>
                   <div className="playlist-row-actions">
+                    <button
+                      type="button"
+                      className="playlist-row-share"
+                      onClick={(e) => { e.stopPropagation(); setSharingPlaylist(p); setFormError(''); setShareSuccess(''); }}
+                    >
+                      Share
+                    </button>
+
                     <button
                       type="button"
                       className="playlist-row-edit"
@@ -399,6 +440,7 @@ export default function PlaylistsTab() {
                       <p className="playlist-row-meta">
                         {songs.length} {songs.length === 1 ? 'song' : 'songs'}
                         {p.description && ` · ${p.description}`}
+                        {p.user?.email && ` · Created by: ${p.user.email}`}
                       </p>
                     </button>
                   </div>
@@ -621,6 +663,47 @@ export default function PlaylistsTab() {
                   disabled={submitting}
                 >
                   {submitting ? 'Saving...' : editing ? 'Save' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {sharingPlaylist && (
+        <div className="playlist-form-overlay" onClick={() => setSharingPlaylist(null)}>
+          <div className="playlist-form-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="playlist-form-title">Share "{sharingPlaylist.name}"</h3>
+            <p className="section-subtitle">Enter the email of the user you want to share with.</p>
+            
+            <form onSubmit={handleShare} className="playlist-form">
+              <input
+                type="email"
+                className="auth-input"
+                placeholder="user@example.com"
+                value={shareEmail}
+                onChange={(e) => setShareEmail(e.target.value)}
+                required
+                autoFocus
+              />
+              
+              {formError && <p className="playlists-error">{formError}</p>}
+              {shareSuccess && <p className="share-success-msg">{shareSuccess}</p>}
+
+              <div className="playlist-form-actions">
+                <button 
+                  type="button" 
+                  className="playlist-form-cancel" 
+                  onClick={() => setSharingPlaylist(null)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="playlists-create-btn" 
+                  disabled={submitting}
+                >
+                  {submitting ? 'Sharing...' : 'Share Playlist'}
                 </button>
               </div>
             </form>
