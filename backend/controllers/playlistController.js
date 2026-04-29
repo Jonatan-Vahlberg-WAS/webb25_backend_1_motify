@@ -1,5 +1,5 @@
 import Playlist from '../models/Playlist.js';
-import { User } from '../models/User.js';
+import User from '../models/User.js';
 
 export const getLatestPlaylists = async (req, res) => {
   try {
