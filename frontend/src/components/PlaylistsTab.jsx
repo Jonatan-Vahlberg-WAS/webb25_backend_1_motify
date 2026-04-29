@@ -35,9 +35,9 @@ export default function PlaylistsTab() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [expandedKey, setExpandedKey] = useState(null)
   const [shareTarget, setShareTarget] = useState(null) // spellistan som delas
-const [shareEmail, setShareEmail] = useState('')
-const [shareError, setShareError] = useState('')
-const [shareSubmitting, setShareSubmitting] = useState(false)
+  const [shareEmail, setShareEmail] = useState('')
+  const [shareError, setShareError] = useState('')
+  const [shareSubmitting, setShareSubmitting] = useState(false)
 
   const toggleExpand = (prefix, id) => {
     const key = `${prefix}:${id}`
