@@ -1,0 +1,157 @@
+import Playlist from '../models/Playlist.js';
+import User from '../models/User.js';
+
+export const getLatestPlaylists = async (req, res) => {
+  try {
+    const playlists = await Playlist.find({ user: null })
+      .sort({ _id: -1 })
+      .limit(5)
+      .populate('songs', 'title');
+
+    res.json(playlists);
+  } catch (err) {
+    console.error('Latest playlists failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getMyPlaylists = async (req, res) => {
+  try {
+    const playlists = await Playlist.find({ user: req.user._id })
+      .populate('songs', 'title artist durationSeconds')
+      .populate('user', 'email');
+
+    res.json(playlists);
+  } catch (err) {
+    console.error('My playlists failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getPublicPlaylists = async (req, res) => {
+  try {
+    const playlists = await Playlist.find({ user: null })
+      .populate('songs', 'title artist durationSeconds')
+      .populate('user', 'email');
+
+    res.json(playlists);
+  } catch (err) {
+    console.error('Playlists list failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const createMyPlaylist = async (req, res) => {
+  try {
+    const body = {
+      name: req.body.name,
+      description: req.body.description,
+      songs: req.body.songs || [],
+      user: req.body.user ?? req.user._id,
+    };
+
+    const playlist = await Playlist.create(body);
+
+    await playlist.populate('songs', 'title artist durationSeconds');
+    await playlist.populate('user', 'email');
+
+    res.status(201).json(playlist);
+  } catch (err) {
+    console.error('Create playlist failed:', err.message);
+    res.status(400).json({ error: err.message });
+  }
+};
+
+export const updateMyPlaylist = async (req, res) => {
+  try {
+    const playlist = await Playlist.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    )
+      .populate('songs', 'title artist durationSeconds')
+      .populate('user', 'email');
+
+    if (!playlist) {
+      console.error('Update playlist: Playlist not found');
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+
+    res.json(playlist);
+  } catch (err) {
+    console.error('Update playlist failed:', err.message);
+    res.status(400).json({ error: err.message });
+  }
+};
+
+export const deleteMyPlaylist = async (req, res) => {
+  try {
+    const playlist = await Playlist.findByIdAndDelete(req.params.id);
+
+    if (!playlist) {
+      console.error('Delete playlist: Playlist not found');
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+
+    res.status(204).send();
+  } catch (err) {
+    console.error('Delete playlist failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getPlaylistById = async (req, res) => {
+  try {
+    const playlist = await Playlist.findById(req.params.id)
+      .populate({ path: 'songs', populate: { path: 'artist', select: 'name' } })
+      .populate('user', 'email');
+    if (!playlist) {
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+
+    res.json(playlist);
+  } catch (err) {
+    console.error('Get playlist failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const sharePlaylist = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const userToShareWith = await User.findOne({ email });
+    if (!userToShareWith) {
+      console.error('Share playlist: User to share with not found');
+      return res.status(404).json({ error: 'User to share with not found' });
+    }
+
+    const playlist = req.playlist;
+
+    if (playlist.sharedWith.some(id => id.toString() === userToShareWith._id.toString())) {
+      console.error('Share playlist: Already shared');
+      return res.status(400).json({ error: 'Playlist already shared with this user' });
+    }
+
+    playlist.sharedWith.push(userToShareWith._id);
+    await playlist.save();
+
+    res.json({ message: `Playlist shared with ${email}` });
+  } catch (err) {
+    console.error('Share playlist failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getPlaylistsSharedWithMe = async (req, res) => {
+  try {
+    const playlists = await Playlist.find({ sharedWith: req.user._id })
+      .populate('songs', 'title artist durationSeconds')
+      .populate('user', 'email');
+
+    res.json(playlists);
+  } catch (err) {
+    console.error('Shared with me playlists failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};

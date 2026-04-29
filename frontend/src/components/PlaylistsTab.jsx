@@ -34,6 +34,10 @@ export default function PlaylistsTab() {
   const [formError, setFormError] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [expandedKey, setExpandedKey] = useState(null)
+  const [shareTarget, setShareTarget] = useState(null) // spellistan som delas
+  const [shareEmail, setShareEmail] = useState('')
+  const [shareError, setShareError] = useState('')
+  const [shareSubmitting, setShareSubmitting] = useState(false)
 
   const toggleExpand = (prefix, id) => {
     const key = `${prefix}:${id}`
@@ -241,6 +245,27 @@ export default function PlaylistsTab() {
     }
   }
 
+  const handleShare = async (e) => {
+  e.preventDefault()
+  setShareError('')
+  setShareSubmitting(true)
+  try {
+    const res = await fetch(`/api/playlists/my/${shareTarget._id}/share`, {
+      method: 'POST',
+      headers: authJsonHeaders(),
+      body: JSON.stringify({ email: shareEmail.trim() }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Share failed')
+    setShareTarget(null)
+    setShareEmail('')
+  } catch (err) {
+    setShareError(err.message)
+  } finally {
+    setShareSubmitting(false)
+  }
+}
+
   if (!user) return null
 
   return (
@@ -302,6 +327,14 @@ export default function PlaylistsTab() {
                     >
                       Edit
                     </button>
+                    <button
+  type="button"
+  className="playlist-row-edit"
+  onClick={(e) => { e.stopPropagation(); setShareTarget(p); setShareEmail(''); setShareError('') }}
+  disabled={submitting}
+>
+  Share
+</button>
                     {deleteConfirm?._id === p._id ? (
                       <>
                         <button
@@ -492,6 +525,52 @@ export default function PlaylistsTab() {
           </div>
         )}
       </section>
+
+      {shareTarget && (
+  <div className="playlist-form-overlay" onClick={() => setShareTarget(null)} role="presentation">
+    <div
+      className="playlist-form-modal"
+      onClick={(e) => e.stopPropagation()}
+      role="dialog"
+      aria-modal="true"
+    >
+      <h3 className="playlist-form-title">Share "{shareTarget.name}"</h3>
+      <form onSubmit={handleShare} className="playlist-form">
+        <label htmlFor="share-email" className="auth-label">
+          Share with (email)
+        </label>
+        <input
+          id="share-email"
+          type="email"
+          className="auth-input"
+          value={shareEmail}
+          onChange={(e) => setShareEmail(e.target.value)}
+          placeholder="friend@example.com"
+          required
+          autoFocus
+        />
+        {shareError && <p className="auth-error">{shareError}</p>}
+        <div className="playlist-form-actions">
+          <button
+            type="button"
+            className="playlist-form-cancel"
+            onClick={() => setShareTarget(null)}
+            disabled={shareSubmitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="auth-submit"
+            disabled={shareSubmitting}
+          >
+            {shareSubmitting ? 'Sharing...' : 'Share'}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
 
       {formOpen && (
         <div className="playlist-form-overlay" onClick={closeForm} role="presentation">

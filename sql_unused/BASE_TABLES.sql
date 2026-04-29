@@ -21,7 +21,7 @@ CREATE TABLE songs (
     title TEXT NOT NULL,
     duration_seconds INT CHECK (duration_seconds IS NULL OR duration_seconds > 0), -- Duration of the song has to be greater than 0 or null
     playcount BIGINT NOT NULL CHECK (playcount >= 0), -- Number of times the song has been played
-    listeners BIGINT NOT NULL CHECK (listeners >= 0), -- Number of listeners has to be greater than 0
+    listenerCount BIGINT NOT NULL CHECK (listenerCount >= 0), -- Number of listenerCount has to be greater than 0
     album_id INT REFERENCES albums(id) ON DELETE SET NULL, -- Album ID has to be a valid album ID or null and if the album is deleted, the song will be set to null
     UNIQUE (artist_id, title) -- Prevent duplicate songs by the same artist
 );

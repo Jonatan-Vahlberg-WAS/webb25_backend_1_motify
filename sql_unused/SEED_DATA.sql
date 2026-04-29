@@ -65,7 +65,7 @@ INSERT INTO albums (id, artist_id, title, release_date) VALUES
 (32, 29, 'Grace', '1994-08-23');
 
 
-INSERT INTO songs (id, artist_id, title, duration_seconds, playcount, listeners, album_id) VALUES
+INSERT INTO songs (id, artist_id, title, duration_seconds, playcount, listenerCount, album_id) VALUES
 (1, 1, 'DtMF', 237, 12124362, 1010468, 2),
 (2, 1, 'NUEVAYoL', 183, 9227326, 800583, 2),
 (3, 2, 'Stateside + Zara Larsson', 176, 7596071, 620552, 3),
