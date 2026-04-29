@@ -27,13 +27,13 @@ const songSchema = new mongoose.Schema({
       message: 'Playcount must be 0 or greater',
     },
   },
-  listeners: {
+  listenerCount: {
     type: Number,
     required: true,
     default: 0,
     validate: {
       validator: (v) => v >= 0,
-      message: 'Listeners must be 0 or greater',
+      message: 'listenerCount must be 0 or greater',
     },
   },
   album: {
