@@ -9,7 +9,7 @@ SELECT
     al.title AS album_title,
     s.duration_seconds,
     s.playcount,
-    s.listeners
+    s.listenerCount
 FROM songs s
 JOIN artists a ON a.id = s.artist_id
 LEFT JOIN albums al ON al.id = s.album_id;
@@ -29,14 +29,14 @@ LEFT JOIN songs s ON s.id = ps.song_id
 GROUP BY p.id, p.name, p.description;
 
 
-/* Artist statistics: song count, total plays, total listeners */
+/* Artist statistics: song count, total plays, total listenerCount */
 CREATE OR REPLACE VIEW v_artist_stats AS
 SELECT
     a.id,
     a.name,
     COUNT(s.id) AS song_count,
     COALESCE(SUM(s.playcount), 0) AS total_playcount,
-    COALESCE(SUM(s.listeners), 0) AS total_listeners
+    COALESCE(SUM(s.listenerCount), 0) AS total_listenerCount
 FROM artists a
 LEFT JOIN songs s ON s.artist_id = a.id
 GROUP BY a.id, a.name;
@@ -49,7 +49,7 @@ SELECT
     s.title,
     a.name AS artist_name,
     s.playcount,
-    s.listeners
+    s.listenerCount
 FROM songs s
 JOIN artists a ON a.id = s.artist_id
 ORDER BY s.playcount DESC

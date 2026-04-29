@@ -86,7 +86,7 @@ const ALBUMS = [
   [29, 'Grace', '1994-08-23'],
 ];
 
-// [artistId, title, durationSeconds, playcount, listeners, albumId?]
+// [artistId, title, durationSeconds, playcount, listenerCount, albumId?]
 const SONGS = [
   [1, 'DtMF', 237, 12124362, 1010468, 2],
   [1, 'NUEVAYoL', 183, 9227326, 800583, 2],
@@ -194,13 +194,13 @@ const runSeed = async () => {
   console.log(`Created ${ALBUMS.length} albums`);
 
   const songIds = [];
-  for (const [artistId, title, durationSeconds, playcount, listeners, albumId] of SONGS) {
+  for (const [artistId, title, durationSeconds, playcount, listenerCount, albumId] of SONGS) {
     const song = await Song.create({
       artist: artistIds[artistId],
       title,
       durationSeconds: durationSeconds ?? null,
       playcount,
-      listeners,
+      listenerCount,
       ...(albumId && { album: albumIds[albumId] }),
     });
     songIds.push(song._id);
