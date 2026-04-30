@@ -18,6 +18,12 @@ const playlistSchema = new mongoose.Schema({
     ref: 'User',
     default: null,
   },
+  sharedWith: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
+}, {
+  timestamps: true,
 });
 
 export default mongoose.model('Playlist', playlistSchema);
